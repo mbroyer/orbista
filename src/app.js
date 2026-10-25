@@ -231,6 +231,8 @@ $("setupGo").onclick=()=>startSetup();
 
 // Landkarte: eine einzige SVG-Karte (Natural Earth, src/map.js), die je Frage auf die Region der Frage schwenkt.
 // Kleinstaaten bekommen einen Kreis zum Antippen; mit + und − zoomen, mit dem Finger verschieben.
+// Die Karte zoomt nie von selbst (Mark: man soll sehen, wo ein Land im Verhältnis zu den anderen liegt);
+// ein kleines markiertes Land bekommt stattdessen einen Pfeil.
 const MAP=window.ORBISTA_MAP;
 let MAP_VIEW=null;
 // Nachbarn für die Auswahl beim markierten Land: die nächsten Länder nach Kartenabstand
@@ -241,12 +243,20 @@ function mapView(){
   if(!MAP_VIEW){
     const el=document.createElement("div");el.className="mapbox";el.id="map";
     const small=ALL.filter(c=>MAP.box[c]&&MAP.box[c][2]<40);
-    el.innerHTML=`<svg role="img" aria-label="Landkarte" preserveAspectRatio="xMidYMid meet"><path class="bg" d="${MAP.bg}"/>${Object.keys(MAP.p).map(c=>`<path class="c" data-c="${c}" d="${MAP.p[c]}"/>`).join("")}${small.map(c=>`<circle class="dot" data-c="${c}" cx="${MAP.box[c][0]}" cy="${MAP.box[c][1]}" r="4"/>`).join("")}</svg>
+    el.innerHTML=`<svg role="img" aria-label="Landkarte" preserveAspectRatio="xMidYMid meet"><path class="bg" d="${MAP.bg}"/>${Object.keys(MAP.p).map(c=>`<path class="c" data-c="${c}" d="${MAP.p[c]}"/>`).join("")}${small.map(c=>`<circle class="dot" data-c="${c}" cx="${MAP.box[c][0]}" cy="${MAP.box[c][1]}" r="4"/>`).join("")}<g class="arrow" hidden><circle/><path/></g></svg>
       <div class="zoom"><button type="button" data-z=".6" aria-label="Näher heran">+</button><button type="button" data-z="1.66" aria-label="Weiter weg">−</button></div>`;
-    const svg=el.querySelector("svg");let home=[0,0,1,1],vb=home;
+    const svg=el.querySelector("svg"),arrow=el.querySelector(".arrow");let home=[0,0,1,1],vb=home,target=null;
+    // Pfeil in fester Bildschirmgröße (k = Karteneinheiten pro Pixel), von der Kartenmitte her auf das Land, mit Ring darum;
+    // nur solange das Land auf dem Bildschirm kleiner als 24 px ist
+    const drawArrow=k=>{const b=target&&MAP.box[target];const off=!b||b[2]/k>=24;arrow.toggleAttribute("hidden",off);if(off)return;
+      const [x,y]=b,ring=Math.max(10*k,b[2]/2+4*k),cx=vb[0]+vb[2]/2,cy=vb[1]+vb[3]/2;
+      let dx=cx-x,dy=cy-y,l=Math.hypot(dx,dy);if(l<1){dx=1;dy=-1;l=Math.SQRT2}dx/=l;dy/=l;
+      const len=46*k,hx=x+dx*(ring+3*k),hy=y+dy*(ring+3*k),tx=hx+dx*len,ty=hy+dy*len,w=7*k,bx=hx+dx*12*k,by=hy+dy*12*k;
+      arrow.firstChild.setAttribute("cx",x);arrow.firstChild.setAttribute("cy",y);arrow.firstChild.setAttribute("r",ring);
+      arrow.lastChild.setAttribute("d",`M${tx} ${ty}L${bx} ${by}M${hx} ${hy}L${bx-dy*w} ${by+dx*w}L${bx+dy*w} ${by-dx*w}Z`)};
     // Kreise immer etwa gleich groß auf dem Bildschirm; sichtbar nur, solange das Land selbst zu klein zum Antippen ist
     const set=v=>{vb=v;svg.setAttribute("viewBox",v.join(" "));const k=v[2]/(svg.clientWidth||360);
-      el.querySelectorAll(".dot").forEach(d=>{const s=MAP.box[d.dataset.c][2]/k;d.setAttribute("r",7*k);d.style.display=s<14?"":"none"})};
+      el.querySelectorAll(".dot").forEach(d=>{const s=MAP.box[d.dataset.c][2]/k;d.setAttribute("r",7*k);d.style.display=s<14?"":"none"});drawArrow(k)};
     el.querySelector(".zoom").onclick=e=>{const z=+e.target.dataset.z;if(!z)return;const cx=vb[0]+vb[2]/2,cy=vb[1]+vb[3]/2,w=Math.min(home[2]*1.3,Math.max(home[2]/12,vb[2]*z)),h=w*home[3]/home[2];set([cx-w/2,cy-h/2,w,h])};
     let drag=null,moved=0;
     svg.addEventListener("pointerdown",e=>{drag=[e.clientX,e.clientY,vb[0],vb[1]];moved=0});
@@ -256,12 +266,10 @@ function mapView(){
       if(t&&G&&!G.locked&&G.mode==="loc"){const code=G.list[G.i].c;answer(t.dataset.c===code,code,t.dataset.c)}};
     svg.addEventListener("pointerup",up);svg.addEventListener("pointercancel",()=>{drag=null});
     MAP_VIEW={el,svg,
-      show(r){home=MAP.view[r];svg.style.aspectRatio=home[2]+"/"+home[3];el.classList.remove("tap");this.clear();set(home.slice())},
+      show(r){home=MAP.view[r];svg.style.aspectRatio=home[2]+"/"+home[3];el.classList.remove("tap");this.clear();target=null;set(home.slice())},
       mark(c,cls){el.querySelectorAll(`[data-c="${c}"]`).forEach(x=>{x.classList.add(cls);if(x.tagName==="path")x.parentNode.insertBefore(x,el.querySelector(".dot"))})},
       clear(){el.querySelectorAll(".hi,.ok,.bad").forEach(x=>x.classList.remove("hi","ok","bad"))},
-      // kleines markiertes Land: näher heranzoomen, damit man es erkennt
-      focus(c){const b=MAP.box[c];if(!b)return;const k=home[2]/(svg.clientWidth||360);if(b[2]/k>40)return;
-        const w=Math.max(home[2]/10,b[2]*8),h=w*home[3]/home[2];set([b[0]-w/2,b[1]-h/2,w,h])}};
+      point(c){target=c;set(vb)}};
   }
   return MAP_VIEW;
 }
@@ -330,7 +338,7 @@ function next(){
     // erst einhängen, dann auf die Region schwenken: die Kreisgröße hängt von der Breite auf dem Bildschirm ab
     const v=mapView();q.querySelector(".mapslot").replaceWith(v.el);v.show(C[code].region);
     if(m==="loc"){v.el.classList.add("tap");$("fb").innerHTML=`<span>Tippe das Land auf der Karte an. Kleine Länder haben einen Kreis, mit + kommst du näher heran.</span>`}
-    else{v.mark(code,"hi");v.focus(code)}
+    else{v.mark(code,"hi");v.point(code)}
   }
   if(TYPEMODES.includes(m)&&!(m==="mtype"&&matchMedia("(pointer:coarse)").matches)) setTimeout(()=>{const t=$("ti");t&&t.focus()},50);
 }
@@ -351,7 +359,7 @@ function answer(ok,code,picked){
   hud();
   document.querySelectorAll(".opt").forEach(b=>{b.disabled=true;if(b.dataset.c===code)b.classList.add("ok");else if(b.dataset.c===picked)b.classList.add("bad")});
   const ti=$("ti");if(ti)ti.disabled=true;
-  if(G.kind==="m"&&MAP_VIEW){MAP_VIEW.clear();MAP_VIEW.el.classList.remove("tap");MAP_VIEW.mark(code,"ok");if(picked&&picked!==code)MAP_VIEW.mark(picked,"bad")}
+  if(G.kind==="m"&&MAP_VIEW){MAP_VIEW.clear();MAP_VIEW.el.classList.remove("tap");MAP_VIEW.mark(code,"ok");if(picked&&picked!==code)MAP_VIEW.mark(picked,"bad");MAP_VIEW.point(code)}
   const stk=G.streak>=3?` · ${G.streak} in Folge`:"";
   fb.className="fb "+(ok?"ok":"bad");
   const x=C[code], want=G.kind==="c"?x.cap:x.name, note=G.kind==="c"&&CAP_NOTE[code];

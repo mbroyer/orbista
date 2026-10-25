@@ -22,8 +22,54 @@ const M={f:{},c:{}};
 try{M.f=JSON.parse(localStorage.getItem(KEYS.f)||localStorage.getItem("flaggo.mastery")||"{}")}catch(e){}
 try{M.c=JSON.parse(localStorage.getItem(KEYS.c)||"{}")}catch(e){}
 function saveMastery(k){try{localStorage.setItem(KEYS[k],JSON.stringify(M[k]))}catch(e){}}
-const known=(k,c)=>{const m=M[k][c];return m&&m.r>=2&&m.r>m.w};
-function record(k,c,ok){const m=M[k][c]||(M[k][c]={r:0,w:0});ok?m.r++:m.w++;saveMastery(k)}
+
+// Sterne pro Karte: 1 = einmal richtig, 2 = gekonnt (r ≥ 2, r > w, an zwei Tagen richtig),
+// 3 = gemeistert (einmal richtig getippt und mindestens 7 Tage nach dem zweiten Stern wieder richtig).
+// Felder je Karte: r, w, s (Sterne), due (fällig ab Tag), d1 (Tag der ersten richtigen Antwort), d2 (Tag des zweiten Sterns), t (richtig getippt)
+const today=()=>{const d=new Date();return Math.floor((d-d.getTimezoneOffset()*6e4)/864e5)};
+const GAP=[0,1,3,14]; // Tage bis zur nächsten Fälligkeit je Sternzahl
+function card(k,c){const m=M[k][c];if(m&&m.s===undefined){m.s=m.r>=2&&m.r>m.w?2:m.r>=1?1:0;m.due=today()}return m}
+const stars=(k,c)=>{const m=card(k,c);return m?m.s:0};
+const known=(k,c)=>stars(k,c)>=2;
+function record(k,c,ok,typed){
+  const T=today(),m=card(k,c)||(M[k][c]={r:0,w:0,s:0,due:T}),before=m.s;
+  if(ok){
+    m.r++;if(typed)m.t=1;
+    if(m.s===0){m.s=1;m.d1=T}
+    else if(m.s===1&&m.r>=2&&m.r>m.w&&T>(m.d1||T)){m.s=2;m.d2=T}
+    else if(m.s===2&&m.t&&T-(m.d2||T)>=7)m.s=3;
+    m.due=T+GAP[m.s];
+  }else{m.w++;m.s=Math.max(0,m.s-1);m.due=T;if(m.s<2)m.d2=undefined}
+  saveMastery(k);return m.s-before;
+}
+const starStr=n=>"★".repeat(n)+"☆".repeat(3-n);
+
+// Reisepunkte (XP), Level, Tagesziel und Serie
+const PKEY="orbista.profile";
+let P={xp:0,day:0,dayXp:0,goal:50,streak:0,goalDay:-9,restWeek:-1};
+try{Object.assign(P,JSON.parse(localStorage.getItem(PKEY)||"{}"))}catch(e){}
+function saveProfile(){try{localStorage.setItem(PKEY,JSON.stringify(P))}catch(e){}}
+const xpFor=L=>50*L*(L-1); // Level 2 bei 100, 5 bei 1.000, 10 bei 4.500 XP
+const levelOf=xp=>{let L=1;while(xpFor(L+1)<=xp)L++;return L};
+const TITLES=["Tourist","Rucksackreisender","Entdecker","Kartograf","Weltenbummler","Botschafter"];
+const titleOf=L=>TITLES[Math.min(TITLES.length-1,Math.floor(L/5))];
+const week=d=>Math.floor((d+3)/7); // Wochen beginnen montags
+// Serie zählt, solange das Tagesziel gestern erreicht wurde; ein verpasster Tag pro Woche wird als Ruhetag überbrückt
+const restOk=T=>P.goalDay===T-2&&P.restWeek!==week(T-1);
+const streakNow=()=>{const T=today();return P.goalDay>=T-1||restOk(T)?P.streak:0};
+function addXp(n){
+  const T=today();if(P.day!==T){P.day=T;P.dayXp=0}
+  const had=P.dayXp>=P.goal;P.xp+=n;P.dayXp+=n;
+  let reached=false;
+  if(!had&&P.dayXp>=P.goal){
+    if(P.goalDay===T-1)P.streak++;
+    else if(restOk(T)){P.streak++;P.restWeek=week(T-1)}
+    else if(P.goalDay!==T)P.streak=1;
+    P.goalDay=T;reached=true;
+  }
+  saveProfile();return reached;
+}
+const dayXp=()=>P.day===today()?P.dayXp:0;
 
 // Thema bestimmt die Spielarten; alle Hauptstadt-Fragen zählen für die Hauptstadt-Karte
 const TOPICS=[["flag","Flaggen"],["cap","Hauptstädte"],["both","Beides"]];
@@ -48,9 +94,12 @@ function renderStart(){
   $("regions").innerHTML=regs.map(r=>{const n=r==="Alle"?ALL.length:REGIONS[r].split(" ").length;return `<button class="chip" data-r="${r}" aria-pressed="${S.region===r}">${r}<small>${n}</small></button>`}).join("");
   $("lengths").innerHTML=LENGTHS.map(l=>`<button class="chip" data-l="${l}" aria-pressed="${S.len===l}">${l?l+" Fragen":"Alle"}</button>`).join("");
   const kind=kindOf(S.mode), pool=poolOf(S.region), k=pool.filter(c=>known(kind,c)).length;
+  const st=pool.reduce((a,c)=>a+stars(kind,c),0), due=pool.filter(c=>{const m=card(kind,c);return m&&m.due<=today()&&m.s<3}).length;
   $("mastTitle").textContent=kind==="c"?"Hauptstädte":"Flaggen";
   $("mastLabel").textContent=`Sicher gekonnt: ${k} von ${pool.length}`;
-  $("mastBar").style.width=(100*k/pool.length)+"%";
+  $("mastStars").textContent=`★ ${st} von ${3*pool.length}`+(due?` · ${due} zum Wiederholen fällig`:"");
+  $("mastBar").style.width=(100*st/(3*pool.length))+"%";
+  renderStatus();
 }
 const poolOf=r=>r==="Alle"?ALL:REGIONS[r].split(" ");
 $("topics").onclick=e=>{const b=e.target.closest("[data-t]");if(b&&S.topic!==b.dataset.t){S.topic=b.dataset.t;S.mode=MODES[S.topic][0].id;renderStart()}};
@@ -58,21 +107,29 @@ $("modes").onclick=e=>{const b=e.target.closest("[data-m]");if(b){S.mode=b.datas
 $("regions").onclick=e=>{const b=e.target.closest("[data-r]");if(b){S.region=b.dataset.r;renderStart()}};
 $("lengths").onclick=e=>{const b=e.target.closest("[data-l]");if(b){S.len=+b.dataset.l;renderStart()}};
 
+function renderStatus(){
+  const L=levelOf(P.xp),a=xpFor(L),b=xpFor(L+1),d=Math.min(dayXp(),P.goal),sk=streakNow(),r=22,u=2*Math.PI*r;
+  $("status").innerHTML=`<div class="lvl"><b>Level ${L}</b><span>${titleOf(L)}</span><div class="bar xp"><div style="width:${100*(P.xp-a)/(b-a)}%"></div></div><small>${P.xp-a} / ${b-a} XP bis Level ${L+1}</small></div>
+  <button class="goal" id="goalBtn" aria-label="Tagesziel ändern"><svg viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="${r}" class="ring0"/><circle cx="28" cy="28" r="${r}" class="ring1" stroke-dasharray="${u*d/P.goal} ${u}"/></svg><b>${dayXp()}</b><small>von ${P.goal} XP</small></button>
+  <div class="streak"><b>${sk}</b><small>${sk===1?"Tag":"Tage"} Serie</small></div>`;
+}
+$("status").onclick=e=>{if(e.target.closest("#goalBtn")){P.goal=P.goal===30?50:P.goal===50?100:30;saveProfile();renderStatus()}};
+
 // Spiel
 let G=null;
 function pickQuestions(pool,n,onlyList){
   if(onlyList) return shuffle(onlyList);
-  // schwächere Karten häufiger: Gewicht 3 = noch nie/falsch, 1 = gekonnt
-  const k=kindOf(S.mode),m=M[k];
-  const w=c=>known(k,c)?1:(m[c]&&m[c].w>m[c].r?4:3);
-  const bag=[];pool.forEach(c=>{for(let i=0;i<w(c);i++)bag.push(c)});
-  const out=[];for(const c of shuffle(bag)){if(!out.includes(c))out.push(c);if(n&&out.length>=n)break}
-  return out;
+  // zuerst fällige Karten (wenige Sterne vorn), dann neue, dann die übrigen nach Fälligkeit
+  const k=kindOf(S.mode),T=today();
+  const rank=c=>{const m=card(k,c);return !m?[1,0]:m.due<=T?[0,m.s]:[2,m.due]};
+  const out=shuffle(pool).map(c=>[rank(c),c]).sort((x,y)=>x[0][0]-y[0][0]||x[0][1]-y[0][1]).map(x=>x[1]);
+  return n?out.slice(0,n):out;
 }
 function start(onlyList){
   const pool=poolOf(S.region);
-  G={pool,list:pickQuestions(pool,S.len,onlyList),i:0,right:0,streak:0,best:0,missed:[],locked:false,mode:S.mode,kind:kindOf(S.mode),hint:0};
-  $("start").hidden=true;$("madeby").hidden=true;$("result").hidden=true;$("game").hidden=false;next();
+  G={topic:S.topic,pool,list:pickQuestions(pool,S.len,onlyList),i:0,right:0,streak:0,best:0,missed:[],locked:false,mode:S.mode,kind:kindOf(S.mode),hint:0,
+     xp:0,level:levelOf(P.xp),newStars:0,mastered:0,goal:false};
+  $("start").hidden=true;$("status").hidden=true;$("madeby").hidden=true;$("result").hidden=true;$("game").hidden=false;next();
 }
 function distractors(code){
   const c=shuffle(G.pool.filter(x=>x!==code));
@@ -104,16 +161,22 @@ function next(){
 }
 function answer(ok,code,picked){
   if(G.locked)return;G.locked=true;
-  record(G.kind,code,ok);
+  const typed=TYPEMODES.includes(G.mode), gain=record(G.kind,code,ok,typed&&!G.hint), s=stars(G.kind,code);
   const fb=$("fb");
-  if(ok){G.right++;G.streak++;G.best=Math.max(G.best,G.streak)}else{G.streak=0;G.missed.push(code)}
+  let xp=0;
+  if(ok){G.right++;G.streak++;G.best=Math.max(G.best,G.streak);
+    xp=(typed?20:10)+(G.topic==="both"?5:0);if(G.hint)xp=Math.ceil(xp/2);
+    xp+=Math.min(10,2*(G.streak-1));
+    if(gain>0){xp+=20;G.newStars++;if(s===3){xp+=50;G.mastered++}}
+    G.xp+=xp;if(addXp(xp))G.goal=true;
+  }else{G.streak=0;G.missed.push(code)}
   $("hudScore").textContent=`${G.right} ✓ · ${G.i+1}/${G.list.length}`;
   document.querySelectorAll(".opt").forEach(b=>{b.disabled=true;if(b.dataset.c===code)b.classList.add("ok");else if(b.dataset.c===picked)b.classList.add("bad")});
   const ti=$("ti");if(ti)ti.disabled=true;
   const stk=G.streak>=3?` · ${G.streak} in Folge`:"";
   fb.className="fb "+(ok?"ok":"bad");
   const x=C[code], want=G.kind==="c"?x.cap:x.name, note=G.kind==="c"&&CAP_NOTE[code];
-  fb.innerHTML=`<b>${ok?"Richtig!":"Das war "+want}</b><span>${x.name} · ${x.cap} · ${x.region}${ok?stk:""}</span>${note?`<span class="note">${note}</span>`:""}`;
+  fb.innerHTML=`<b>${ok?"Richtig! +"+xp+" XP":"Das war "+want}</b><span>${x.name} · ${x.cap} · ${x.region}${ok?stk:""}</span><span class="stars${gain>0?" up":""}" aria-label="${s} von 3 Sternen">${starStr(s)}</span>${note?`<span class="note">${note}</span>`:""}`;
   if(!ok) $("q").classList.add("shake");
   const last=G.i+1>=G.list.length;
   const row=document.createElement("div");row.className="row";
@@ -129,13 +192,21 @@ $("q").addEventListener("click",e=>{
     $("fb").className="fb";$("fb").innerHTML=`<b>${n.slice(0,G.hint)}${"·".repeat(Math.max(0,n.length-G.hint))}</b><span>${n.length} Buchstaben · ${C[code].region}</span>`;}
 });
 $("q").addEventListener("submit",e=>{e.preventDefault();if(G.locked)return;const code=G.list[G.i];const v=$("ti").value;if(!v.trim())return;answer(matches(code,v,G.kind==="c"),code,null)});
-$("quit").onclick=()=>{clearTimeout(G&&G.timer);G=null;$("game").hidden=true;$("result").hidden=true;$("start").hidden=false;$("madeby").hidden=false;renderStart()};
+$("quit").onclick=()=>{clearTimeout(G&&G.timer);G=null;$("game").hidden=true;$("result").hidden=true;$("start").hidden=false;$("status").hidden=false;$("madeby").hidden=false;renderStart()};
 function finish(){
   $("game").hidden=true;$("result").hidden=false;
   const n=G.list.length,p=Math.round(100*G.right/n);
   const msg=p===100?"Perfekt, kein einziger Fehler.":p>=80?"Stark!":p>=50?"Gut gemacht, da geht noch mehr.":"Weiter üben, es lohnt sich.";
+  if(p===100&&n>=10){G.xp+=30;if(addXp(30))G.goal=true}
+  const L=levelOf(P.xp),a=xpFor(L),b=xpFor(L+1);
+  const extra=[G.newStars?`${G.newStars} neue${G.newStars===1?"r":""} Stern${G.newStars===1?"":"e"}`:"",G.mastered?`${G.mastered} gemeistert`:"",p===100&&n>=10?"Bonus für die perfekte Runde":""].filter(Boolean).join(" · ");
   const miss=[...new Set(G.missed)];
   $("result").innerHTML=`<div class="label">Ergebnis</div><div class="score">${G.right} / ${n}</div><p class="sub">${msg} Beste Serie: ${G.best}.</p>
+  <div class="gain"><b>+${G.xp} XP</b>${extra?`<span>${extra}</span>`:""}</div>
+  ${L>G.level?`<div class="levelup">Level ${L} erreicht: ${titleOf(L)}</div>`:""}
+  ${G.goal?`<div class="levelup">Tagesziel geschafft · ${streakNow()} ${streakNow()===1?"Tag":"Tage"} Serie</div>`:""}
+  <div class="mastery"><div class="label">Level ${L} · ${P.xp-a} / ${b-a} XP</div><div class="bar xp"><div style="width:${100*(P.xp-a)/(b-a)}%"></div></div>
+  <div class="label">Tagesziel · ${dayXp()} / ${P.goal} XP</div><div class="bar"><div style="width:${Math.min(100,100*dayXp()/P.goal)}%"></div></div></div>
   ${miss.length?`<div class="label">Das war noch schwer</div><div class="missed">${miss.map(c=>`<figure><img src="${flag(c)}" alt=""><figcaption>${C[c].name}${G.kind==="c"?`<small>${C[c].cap}</small>`:""}</figcaption></figure>`).join("")}</div>`:""}
   <div class="row">${miss.length?`<button class="btn" id="again">Fehler nochmal üben</button>`:""}<button class="btn ${miss.length?"ghost":""}" id="new">Neue Runde</button><button class="btn ghost" id="home">Zur Auswahl</button></div>`;
   const missCopy=miss;

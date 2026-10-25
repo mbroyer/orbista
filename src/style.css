@@ -47,6 +47,27 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-of
 .mastery{display:flex;flex-direction:column;gap:6px}
 .bar{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
 .bar>div{height:100%;background:var(--ok);width:0;transition:width .3s}
+.bar.xp>div,.bar.stars>div{background:var(--sun)}
+.muted{color:var(--muted)}
+.status{flex-direction:row;align-items:center;gap:14px}
+.status .lvl{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.status .lvl b{font-family:var(--f-display);font-size:1.3rem;line-height:1}
+.status .lvl span{color:var(--muted);font-size:.9rem}
+.status small{color:var(--muted);font-size:.78rem}
+.goal{border:0;background:transparent;padding:0;position:relative;width:64px;display:flex;flex-direction:column;align-items:center;gap:2px;flex:none}
+.goal svg{width:56px;height:56px;transform:rotate(-90deg)}
+.goal .ring0{fill:none;stroke:var(--line);stroke-width:6}
+.goal .ring1{fill:none;stroke:var(--sun);stroke-width:6;stroke-linecap:round;transition:stroke-dasharray .3s}
+.goal b{position:absolute;top:20px;left:0;right:0;font-size:.72rem;font-variant-numeric:tabular-nums}
+.streak{display:flex;flex-direction:column;align-items:center;flex:none;width:56px}
+.streak b{font-family:var(--f-display);font-size:1.8rem;line-height:1;color:var(--accent)}
+.fb .stars{color:var(--sun);font-size:1.2rem;letter-spacing:.1em}
+.fb .stars.up{animation:pop .5s}
+@keyframes pop{50%{transform:scale(1.35)}}
+.gain{display:flex;flex-direction:column;gap:2px}
+.gain b{font-family:var(--f-display);font-size:1.6rem;color:var(--sun)}
+.gain span{color:var(--muted)}
+.levelup{border-radius:12px;padding:10px 14px;background:color-mix(in srgb,var(--sun) 18%,transparent);font-weight:700}
 .madeby{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:100%;margin:18px 0 8px;color:var(--ink);font-size:.6rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
 .madeby img{width:72px;height:auto;opacity:.9;filter:var(--logo-filter)}
 /* Spiel */

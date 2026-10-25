@@ -23,4 +23,5 @@ Konzept: https://claude.ai/artifact/UEUFjDKwakqbrAUHwzZ6R5
 ## Hinweise
 - Ländernamen kommen aus `Intl.DisplayNames('de')`, Abweichungen stehen in `NAME_FIX` in `src/data.js`. Zusätzliche Tipp-Schreibweisen in `ALIAS`.
 - Hauptstädte: `CAPITAL` in `src/data.js` (deutsche Namen, nur diese stehen in Auswahlfragen), `CAP_ALIAS` für weitere akzeptierte Antworten beim Tippen (zweite Hauptstädte, andere Schreibweisen), `CAP_NOTE` für Sonderfälle, die nach der Antwort erklärt werden (dann kein automatisches Weiter).
-- Neues Land: SVG in `flags/` ablegen, Kürzel in `REGIONS` und Hauptstadt in `CAPITAL` eintragen.
+- Flaggen: detaillierte 4:3-SVGs aus dem npm-Paket flag-icons (MIT), Anzeige überall im Format 4:3. Nach jeder Antwort geht es nur per „Weiter“ weiter, nie automatisch (Marks Wunsch); nur im Zeitrennen läuft es ohne Knopf.
+- Neues Land: SVG (4:3, aus flag-icons) in `flags/` ablegen, Kürzel in `REGIONS` und Hauptstadt in `CAPITAL` eintragen.

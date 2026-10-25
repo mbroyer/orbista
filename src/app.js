@@ -271,7 +271,6 @@ function answer(ok,code,picked){
   row.innerHTML=`<button class="btn" id="nx">${last?"Ergebnis":"Weiter"}</button>`;
   $("q").appendChild(row);$("nx").focus();
   $("nx").onclick=()=>{$("q").classList.remove("shake");G.i++;next()};
-  if(ok&&!note){G.timer=setTimeout(()=>{if(document.body.contains($("nx"))){$("q").classList.remove("shake");G.i++;next()}},1100)}
 }
 $("q").addEventListener("click",e=>{
   const b=e.target.closest(".opt");if(b&&!G.locked){const code=G.list[G.i].c;answer(b.dataset.c===code,code,b.dataset.c);return}

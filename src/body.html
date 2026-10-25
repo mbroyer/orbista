@@ -13,7 +13,7 @@
   <section id="home" class="screen">
     <header class="top">
       <div class="brand"><svg class="globe" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg><h1>Orbista</h1></div>
-      <div class="topr"><button class="iconbtn" id="soundBtn"></button><span class="pill" id="lvlPill"></span></div>
+      <div class="topr"><button class="iconbtn sndbtn" id="soundBtn"></button><span class="pill" id="lvlPill"></span></div>
     </header>
     <div class="card today">
       <div class="todayrow" id="status"></div>
@@ -26,7 +26,7 @@
   </section>
 
   <section id="setup" class="screen" hidden>
-    <div class="back"><button class="iconbtn" id="setupBack" aria-label="Zurück"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span class="muted">Gezielt üben</span></div>
+    <div class="back"><button class="iconbtn" id="setupBack" aria-label="Zurück"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span class="muted">Gezielt üben</span><button class="iconbtn sndbtn"></button></div>
     <h2 class="hero" id="setupTitle"></h2>
     <p class="muted lead" id="setupSub"></p>
     <div id="raceBox" hidden><div class="label">Strecke</div><div class="seg" id="raceKinds"></div></div>
@@ -40,7 +40,7 @@
   <section id="pass" class="screen" hidden></section>
 
   <section id="game" class="screen" hidden>
-    <div class="hud"><button class="iconbtn" id="quit" aria-label="Runde beenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="bar"><div id="prog"></div></div><div class="stat" id="hudScore"></div></div>
+    <div class="hud"><button class="iconbtn" id="quit" aria-label="Runde beenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="bar"><div id="prog"></div></div><div class="stat" id="hudScore"></div><button class="iconbtn sndbtn"></button></div>
     <div class="q" id="q"></div>
   </section>
 

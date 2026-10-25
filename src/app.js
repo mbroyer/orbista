@@ -147,7 +147,8 @@ function renderWelcome(){
 function openWelcome(){W={topic:P.topic||"both",goal:[5,10,20].includes(P.goalQ)?P.goalQ:10};renderWelcome();show("welcome")}
 $("wTopics").onclick=e=>{const b=e.target.closest("[data-t]");if(b){W.topic=b.dataset.t;renderWelcome()}};
 $("wGoals").onclick=e=>{const b=e.target.closest("[data-g]");if(b){W.goal=+b.dataset.g;renderWelcome()}};
-$("begin").onclick=()=>{P.topic=W.topic;P.goalQ=W.goal;saveProfile();goHome()};
+// Beim ersten Start geht es direkt in die erste Runde, die Startseite kommt erst danach.
+$("begin").onclick=()=>{const first=!P.topic;P.topic=W.topic;P.goalQ=W.goal;saveProfile();if(first)startAuto();else goHome()};
 
 // Weiterreisen: Orbista stellt die Runde selbst zusammen. Zuerst fällige Karten (wenige Sterne vorn),
 // dann neue aus der ersten Region, die noch Unbekanntes hat, dann die übrigen nach Fälligkeit.
@@ -193,11 +194,13 @@ function codeLine(){let c=null;try{c=localStorage.getItem("orbista-code")}catch(
 $("topicLine").onclick=e=>{if(e.target.id==="changeTopic")openWelcome()};
 $("go").onclick=()=>startAuto();
 const SPK='<path d="M4 9h4l5-4v14l-5-4H4z"/>';
-function renderSound(){const on=soundOn();$("soundBtn").setAttribute("aria-pressed",String(on));$("soundBtn").setAttribute("aria-label",on?"Klänge ausschalten":"Klänge einschalten");
-  $("soundBtn").innerHTML=svg(SPK+(on?'<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>':'<path d="M16 9l5 6M21 9l-5 6"/>'),"")}
-$("soundBtn").onclick=()=>{P.sound=!soundOn();saveProfile();renderSound();play("tap")};
+// Lautsprecher-Knopf auf jeder Seite (Startseite, Gezielt üben, Frage, Ergebnis, Reisepass), alle zeigen denselben Zustand
+const sndBtn=()=>`<button class="iconbtn sndbtn"></button>`;
+function renderSound(){const on=soundOn();document.querySelectorAll(".sndbtn").forEach(b=>{b.setAttribute("aria-pressed",String(on));b.setAttribute("aria-label",on?"Klänge ausschalten":"Klänge einschalten");
+  b.innerHTML=svg(SPK+(on?'<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>':'<path d="M16 9l5 6M21 9l-5 6"/>'),"")})}
+document.addEventListener("click",e=>{if(e.target.closest(".sndbtn")){P.sound=!soundOn();saveProfile();renderSound();play("tap")}});
 // leises Klicken bei Knöpfen; Antworten klingen über richtig oder falsch
-document.addEventListener("click",e=>{const b=e.target.closest("button");if(b&&!b.disabled&&!b.classList.contains("opt")&&b.id!=="soundBtn"&&!b.closest("#tf"))play("tap")});
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(b&&!b.disabled&&!b.classList.contains("opt")&&!b.classList.contains("sndbtn")&&!b.closest("#tf"))play("tap")});
 $("paths").onclick=e=>{const b=e.target.closest("[data-p]");if(b&&!b.disabled){S.path=b.dataset.p;if(S.path!=="race")S.kind=S.path;renderSetup();show("setup")}};
 $("tabs").onclick=e=>{const b=e.target.closest("[data-tab]");if(!b)return;if(b.dataset.tab==="pass"){renderPass();show("pass")}else goHome()};
 
@@ -348,7 +351,7 @@ function finish(){
   play(L>G.level||G.goal?"big":"end");if(st.length)play("stamp",L>G.level||G.goal?2200:1100);
   const extra=[G.newStars?`${G.newStars} neue${G.newStars===1?"r":""} Stern${G.newStars===1?"":"e"}`:"",G.mastered?`${G.mastered} gemeistert`:"",p===100&&n>=10?"Bonus für die perfekte Runde":""].filter(Boolean).join(" · ");
   const seen=new Set(),miss=G.missed.filter(it=>{const k=it.c+kindOf(it.m);if(seen.has(k))return false;seen.add(k);return true});
-  $("result").innerHTML=`${race||`<div class="label">Ergebnis</div><div class="score">${G.right} / ${n}</div><p class="sub">${msg} Beste Serie: ${G.best}.</p>`}
+  $("result").innerHTML=`<div class="sndrow"><span></span>${sndBtn()}</div>${race||`<div class="label">Ergebnis</div><div class="score">${G.right} / ${n}</div><p class="sub">${msg} Beste Serie: ${G.best}.</p>`}
   <div class="gain"><b>+${G.xp} XP</b>${extra?`<span>${extra}</span>`:""}</div>
   ${L>G.level?`<div class="levelup">Level ${L} erreicht: ${titleOf(L)}</div>`:""}
   ${st.map(([r,k])=>`<div class="levelup stamp-new">Neuer Stempel im Reisepass: ${r} · ${KIND[k]} · +${STAMP_XP} XP</div>`).join("")}
@@ -362,6 +365,7 @@ function finish(){
   if($("again"))$("again").onclick=()=>begin({items:shuffle(miss),restart:g.restart,next:g.next});
   $("new").onclick=()=>g.restart();
   $("homeBtn").onclick=()=>goHome();
+  renderSound();
 }
 
 // Reisepass: alle Länder nach Region mit Sternen, Stempel pro Region und Karte, Bestzeiten
@@ -387,7 +391,7 @@ function renderPass(){
   const list=REGIONS[passRegion].split(" ").sort((a,b)=>C[a].name.localeCompare(C[b].name,"de"));
   const have=list.filter(c=>stars(passKind,c)>0).length;
   const tilt=[-3,2,0,-2,3,-1,2,-3,1,-2,2,0,1];
-  $("pass").innerHTML=`<div class="passcol"><div class="cover">
+  $("pass").innerHTML=`<div class="sndrow"><span class="label">Reisepass</span>${sndBtn()}</div><div class="passcol"><div class="cover">
     <svg class="globe" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26M4.5 8h21M4.5 22h21"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg>
     <div><small>Reisepass · Orbista</small><h2>${titleOf(L)}</h2><span>Level ${L}${isFinite(first)?` · unterwegs seit ${dayStr(first)}`:""}</span>
     <span class="covermini">★ ${tot("f")} Flaggen · ★ ${tot("c")} Hauptstädte</span></div>
@@ -405,9 +409,10 @@ function renderPass(){
       :`<div class="slot empty" data-c="${c}"><div class="hole">${i+1}</div><b>${C[c].name}</b><span>${passKind==="c"?"Hauptstadt ?":"noch frei"}</span></div>`}).join("")}</div>
   <div class="label">Bestzeiten im Zeitrennen</div>
   ${best.length?`<div class="besttimes">${best.map(([key,ms])=>{const [m,r,l]=key.split("|");return `<div><span>${MODE_NAME[m]||m} · ${regionName(r)} · ${+l?l+" Fragen":"alle"}</span><b>${fmt(ms)}</b></div>`}).join("")}</div>`:`<p class="muted race">Noch keine Bestzeiten. Das Zeitrennen gibt es ab Level ${RACE_LEVEL}.</p>`}</div>`;
+  renderSound();
 }
 $("pass").onclick=e=>{const k=e.target.closest("[data-k]"),r=e.target.closest("[data-r]");
   if(k){passKind=k.dataset.k;renderPass()}else if(r){passRegion=r.dataset.r;renderPass()}};
 
-if(P.topic)goHome();else openWelcome();
+renderSound();if(P.topic)goHome();else openWelcome();
 })();

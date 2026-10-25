@@ -139,20 +139,22 @@ function show(id){
   scrollTo(0,0);
 }
 
-// Erster Start: Thema und Tagesziel, beides später änderbar
-let W={topic:"both",goal:10};
+// Erster Start: Thema, Tagesziel und Startregion, alles später änderbar
+let W={topic:"both",goal:10,start:"Europa"};
 function renderWelcome(){
   $("wTopics").innerHTML=TOPICS.map(([id,t,ic])=>`<button data-t="${id}" aria-pressed="${W.topic===id}">${svg(ic,"")}${t}</button>`).join("");
   $("wGoals").innerHTML=GOALS.map(([g,t,d,m])=>`<button class="line goalline" data-g="${g}" aria-pressed="${W.goal===g}"><span class="tx">${W.goal===g?svg(ICON.check,"check"):""}<b>${t}</b><small>${d}</small></span><small>etwa ${m}</small></button>`).join("");
+  $("wStart").innerHTML=ORDER.map(r=>`<button class="chip" data-r="${r}" aria-pressed="${W.start===r}">${r}</button>`).join("");
 }
-function openWelcome(){W={topic:P.topic||"both",goal:[5,10,20].includes(P.goalQ)?P.goalQ:10};renderWelcome();show("welcome")}
+function openWelcome(){W={topic:P.topic||"both",goal:[5,10,20].includes(P.goalQ)?P.goalQ:10,start:ORDER.includes(P.start)?P.start:"Europa"};renderWelcome();show("welcome")}
 $("wTopics").onclick=e=>{const b=e.target.closest("[data-t]");if(b){W.topic=b.dataset.t;renderWelcome()}};
 $("wGoals").onclick=e=>{const b=e.target.closest("[data-g]");if(b){W.goal=+b.dataset.g;renderWelcome()}};
+$("wStart").onclick=e=>{const b=e.target.closest("[data-r]");if(b){W.start=b.dataset.r;renderWelcome()}};
 // Beim ersten Start geht es direkt in die erste Runde, die Startseite kommt erst danach.
-$("begin").onclick=()=>{const first=!P.topic;P.topic=W.topic;P.goalQ=W.goal;saveProfile();if(first)startAuto();else goHome()};
+$("begin").onclick=()=>{const first=!P.topic;P.topic=W.topic;P.goalQ=W.goal;P.start=W.start;saveProfile();if(first)startAuto();else goHome()};
 
 // Weiterreisen: Orbista stellt die Runde selbst zusammen. Zuerst fällige Karten (wenige Sterne vorn),
-// dann neue aus der ersten Region, die noch Unbekanntes hat, dann die übrigen nach Fälligkeit.
+// dann neue aus der ersten Region, die noch Unbekanntes hat (ab der gewählten Startregion `P.start`), dann die übrigen nach Fälligkeit.
 // Ab zwei Sternen wird getippt, vorher ausgewählt.
 function modeFor(k,c,typing,both){
   const t=typing===null?stars(k,c)>=2:typing;
@@ -164,7 +166,8 @@ function autoPlan(){
   const ks=kindsOf(P.topic||"both"),cards=[];
   for(const k of ks)for(const c of ALL)cards.push([k,c]);
   const due=shuffle(cards.filter(([k,c])=>isDue(k,c))).sort((a,b)=>stars(a[0],a[1])-stars(b[0],b[1]));
-  const region=ORDER.find(r=>ks.some(k=>poolOf(r).some(c=>!card(k,c))))||"Alle";
+  const order=ORDER.includes(P.start)?[P.start,...ORDER.filter(r=>r!==P.start)]:ORDER;
+  const region=order.find(r=>ks.some(k=>poolOf(r).some(c=>!card(k,c))))||"Alle";
   const fresh=shuffle(cards.filter(([k,c])=>!card(k,c)&&(region==="Alle"||C[c].region===region)));
   const rest=cards.filter(([k,c])=>card(k,c)&&!isDue(k,c)).sort((a,b)=>card(a[0],a[1]).due-card(b[0],b[1]).due);
   const list=[...due,...fresh,...rest].slice(0,ROUND);

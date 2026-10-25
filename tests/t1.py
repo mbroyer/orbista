@@ -93,8 +93,20 @@ async def main():
 
         # Thema ändern führt zurück zum ersten Schritt
         await pg.click('#changeTopic'); assert await pg.is_visible('#welcome')
-        await pg.click('#wTopics [data-t="cap"]'); await pg.click('#begin')
+        assert await pg.get_attribute('#wStart [data-r="Europa"]', 'aria-pressed') == 'true'
+        await pg.click('#wTopics [data-t="cap"]'); await pg.click('#wStart [data-r="Asien"]'); await pg.click('#begin')
         assert 'Hauptstädte' in await pg.inner_text('#topicLine')
+        # Startregion: Weiterreisen nimmt neue Karten zuerst aus Asien
+        assert (await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))"))['start'] == 'Asien'
+        pg2 = await (await b.new_context(viewport={'width': 390, 'height': 844})).new_page(); pg2.on('pageerror', lambda e: errs.append(str(e)))
+        await pg2.goto('file://' + W + 'orbista.html'); await pg2.wait_for_timeout(300)
+        await pg2.click('#wStart [data-r="Asien"]'); await pg2.click('#begin')
+        asien = set((await pg2.evaluate("ORBISTA_DATA.REGIONS['Asien']")).split())
+        codes = []
+        for i in range(10):
+            codes.append(await pg2.get_attribute('#q', 'data-code')); await antwort(pg2); await pg2.click('#nx')
+        assert all(c in asien for c in codes), codes
+        await pg2.click('#homeBtn'); assert 'Asien' in await pg2.inner_text('#goSub')
         await pg.screenshot(path=W + 't1_ende.png', full_page=True)
         assert await pg.evaluate("!!localStorage.getItem('orbista.mastery')")
         assert not errs, errs

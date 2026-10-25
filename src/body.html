@@ -1,3 +1,4 @@
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("orbista.theme")==="dark"?"dark":"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
 <main>
   <section id="welcome" class="screen" hidden>
     <svg class="globe big" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26M4.5 8h21M4.5 22h21"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg>
@@ -9,18 +10,18 @@
     <div class="lines" id="wGoals"></div>
     <div class="label">3 · Wo möchtest du anfangen?</div>
     <div class="chips" id="wStart"></div>
-    <button class="btn" id="begin">Reise beginnen</button>
+    <button class="btn primary" id="begin">Reise beginnen</button>
   </section>
 
   <section id="home" class="screen">
     <header class="top">
       <div class="brand"><svg class="globe" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg><h1>Orbista</h1></div>
-      <div class="topr"><button class="iconbtn sndbtn" id="soundBtn"></button></div>
+      <div class="topr"><button class="iconbtn themebtn"></button><button class="iconbtn sndbtn" id="soundBtn"></button></div>
     </header>
     <div class="world" id="world"></div>
     <div class="card today">
       <div class="todayrow" id="status"></div>
-      <button class="btn go" id="go"><span><b>Weiterreisen</b><small id="goSub"></small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <button class="btn go primary" id="go"><span><b>Weiterreisen</b><small id="goSub"></small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     </div>
     <div class="label">Gezielt üben</div>
     <div class="lines" id="paths"></div>
@@ -37,7 +38,7 @@
     <div class="label">Antworten</div>
     <div class="seg" id="answers"></div>
     <p class="muted small" id="answerHint"></p>
-    <button class="btn go" id="setupGo"><span><b>Los geht’s</b><small id="setupGoSub"></small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <button class="btn go primary" id="setupGo"><span><b>Los geht’s</b><small id="setupGoSub"></small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </section>
 
   <section id="pass" class="screen" hidden></section>

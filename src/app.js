@@ -220,6 +220,12 @@ const sndBtn=()=>`<button class="iconbtn sndbtn"></button>`;
 function renderSound(){const on=soundOn();document.querySelectorAll(".sndbtn").forEach(b=>{b.setAttribute("aria-pressed",String(on));b.setAttribute("aria-label",on?"Klänge ausschalten":"Klänge einschalten");
   b.innerHTML=svg(SPK+(on?'<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>':'<path d="M16 9l5 6M21 9l-5 6"/>'),"")})}
 document.addEventListener("click",e=>{if(e.target.closest(".sndbtn")){P.sound=!soundOn();saveProfile();renderSound();play("tap")}});
+// Hell/Dunkel-Umschalter (Startseite, Reisepass): Standard hell, nur auf diesem Gerät gemerkt (orbista.theme, nicht im Reise-Code)
+const themeBtn=()=>`<button class="iconbtn themebtn"></button>`;
+const isDark=()=>document.documentElement.dataset.theme==="dark";
+function renderTheme(){const d=isDark();document.querySelectorAll(".themebtn").forEach(b=>{b.setAttribute("aria-pressed",String(d));b.setAttribute("aria-label",d?"Hellen Modus einschalten":"Dunklen Modus einschalten");
+  b.innerHTML=svg(d?'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>':'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',"")})}
+document.addEventListener("click",e=>{if(e.target.closest(".themebtn")){const d=!isDark();document.documentElement.dataset.theme=d?"dark":"light";try{localStorage.setItem("orbista.theme",d?"dark":"light")}catch(x){}renderTheme()}});
 // leises Klicken bei Knöpfen; Antworten klingen über richtig oder falsch
 document.addEventListener("click",e=>{const b=e.target.closest("button");if(b&&!b.disabled&&!b.classList.contains("opt")&&!b.classList.contains("sndbtn")&&!b.closest("#tf"))play("tap")});
 $("paths").onclick=e=>{const b=e.target.closest("[data-p]");if(b&&!b.disabled){S.path=b.dataset.p;if(S.path!=="race")S.kind=S.path;else if(S.kind==="m")S.kind="f";renderSetup();show("setup")}};
@@ -337,7 +343,7 @@ function next(){
   const fb=`<div class="fb" id="fb" aria-live="polite"></div>`;
   const big=`<div class="stage"><img class="flag" src="${flag(code)}" alt="Flagge"></div>`, small=`<img class="flag small" src="${flag(code)}" alt="Flagge">`;
   const txt=(list,key)=>`<div class="opts">${list.map(c=>`<button class="opt" data-c="${c}">${C[c][key]}</button>`).join("")}</div>`;
-  const typebox=ph=>`<form class="typebox" id="tf" autocomplete="off"><input id="ti" type="text" placeholder="${ph}" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done"><button class="btn" type="submit">OK</button></form><div class="row"><button class="btn ghost" id="hintBtn" type="button">Tipp</button><button class="btn ghost" id="skip" type="button">Weiß nicht</button></div>`;
+  const typebox=ph=>`<form class="typebox" id="tf" autocomplete="off"><input id="ti" type="text" placeholder="${ph}" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done"><button class="btn primary" type="submit">OK</button></form><div class="row"><button class="btn ghost" id="hintBtn" type="button">Tipp</button><button class="btn ghost" id="skip" type="button">Weiß nicht</button></div>`;
   const cd=card(G.kind,code),tag=!cd?"Neu":isDue(G.kind,code)?"Wiederholung":"";
   const kick=`<div class="label kicker">${C[code].region}${tag?" · "+tag:""}</div>`;
   const n=C[code].name;
@@ -394,7 +400,7 @@ function answer(ok,code,picked){
   if(!ok) $("q").classList.add("shake");
   const last=G.i+1>=G.list.length;
   const row=document.createElement("div");row.className="row";
-  row.innerHTML=`<button class="btn" id="nx">${last?"Ergebnis":"Weiter"}</button>`;
+  row.innerHTML=`<button class="btn primary" id="nx">${last?"Ergebnis":"Weiter"}</button>`;
   $("q").appendChild(row);$("nx").focus();
   $("nx").onclick=()=>{$("q").classList.remove("shake");G.i++;next()};
 }
@@ -433,7 +439,7 @@ function finish(){
   ${G.goal?`<div class="levelup">Tagesziel geschafft · ${streakNow()} ${streakNow()===1?"Tag":"Tage"} Serie</div>`:""}
   <div class="mastery">  <div class="label">Tagesziel · ${Math.min(dayQ(),P.goalQ)} / ${P.goalQ} Fragen</div><div class="bar"><div style="width:${Math.min(100,100*dayQ()/P.goalQ)}%"></div></div></div>
   ${miss.length?`<div class="label">Das war noch schwer</div><div class="missed">${miss.map(({c,m})=>`<figure><img src="${flag(c)}" alt=""><figcaption>${C[c].name}${kindOf(m)==="c"?`<small>${C[c].cap}</small>`:""}</figcaption></figure>`).join("")}</div>`:""}
-  <div class="row">${miss.length?`<button class="btn" id="again">Fehler nochmal üben</button>`:""}<button class="btn ${miss.length?"ghost":""}" id="new">${G.next}</button></div>
+  <div class="row">${miss.length?`<button class="btn primary" id="again">Fehler nochmal üben</button>`:""}<button class="btn ${miss.length?"ghost":"primary"}" id="new">${G.next}</button></div>
   <button class="btn ghost" id="homeBtn">Zur Startseite</button>`;
   const g=G;
   if($("again"))$("again").onclick=()=>begin({items:shuffle(miss),restart:g.restart,next:g.next});
@@ -465,7 +471,7 @@ function renderPass(){
   const list=REGIONS[passRegion].split(" ").sort((a,b)=>C[a].name.localeCompare(C[b].name,"de"));
   const have=list.filter(c=>stars(passKind,c)>0).length;
   const tilt=[-3,2,0,-2,3,-1,2,-3,1,-2,2,0,1];
-  $("pass").innerHTML=`<div class="sndrow"><span class="label">Reisepass</span>${sndBtn()}</div><div class="passcol"><div class="cover">
+  $("pass").innerHTML=`<div class="sndrow"><span class="label">Reisepass</span><span class="topr">${themeBtn()}${sndBtn()}</span></div><div class="passcol"><div class="cover">
     <svg class="globe" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26M4.5 8h21M4.5 22h21"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg>
     <div><small>Reisepass · Orbista</small><h2>${got} ${got===1?"Land":"Länder"} besucht</h2><span>${isFinite(first)?`unterwegs seit ${dayStr(first)}`:"bereit zur Abreise"}</span>
     <span class="covermini">★ ${tot("f")} Flaggen · ★ ${tot("c")} Hauptstädte · ★ ${tot("m")} Landkarte</span></div>
@@ -483,10 +489,10 @@ function renderPass(){
       :`<div class="slot empty" data-c="${c}"><div class="hole">${i+1}</div><b>${C[c].name}</b><span>${passKind==="c"?"Hauptstadt ?":"noch frei"}</span></div>`}).join("")}</div>
   <div class="label">Bestzeiten im Zeitrennen</div>
   ${best.length?`<div class="besttimes">${best.map(([key,ms])=>{const [m,r,l]=key.split("|");return `<div><span>${MODE_NAME[m]||m} · ${regionName(r)} · ${+l?l+" Fragen":"alle"}</span><b>${fmt(ms)}</b></div>`}).join("")}</div>`:`<p class="muted race">Noch keine Bestzeiten. Das Zeitrennen gibt es ab dem ersten Visum.</p>`}</div>`;
-  renderSound();
+  renderSound();renderTheme();
 }
 $("pass").onclick=e=>{const k=e.target.closest("[data-k]"),r=e.target.closest("[data-r]");
   if(k){passKind=k.dataset.k;renderPass()}else if(r){passRegion=r.dataset.r;renderPass()}};
 
-renderSound();if(P.topic)goHome();else openWelcome();
+renderSound();renderTheme();if(P.topic)goHome();else openWelcome();
 })();

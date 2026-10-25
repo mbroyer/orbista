@@ -6,18 +6,14 @@
   --shadow:0 1px 0 var(--line),0 6px 18px rgba(29,43,58,.10);
   --pass:#1c3a4f; --pass-ink:#f3e6c8; --pass-spine:#142b3b; --pass-gold:#d9a85b; --guilloche:rgba(31,86,115,.05);
   --sea:#d3e2e6; --land:#efe5cf; --land-off:#e2dccf; --border:#8a7556;
-  --logo-filter:none; --f-display:"Young Serif",Georgia,serif; --f-body:"IBM Plex Sans",system-ui,sans-serif;
+  --logo-filter:none; --cta:#e58a33; --cta-ink:#1d2b3a; color-scheme:light; --f-display:"Young Serif",Georgia,serif; --f-body:"IBM Plex Sans",system-ui,sans-serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#111a24; --card:#18232f; --ink:#ede6d6; --muted:#a2a9b0; --line:#2c3a48; --line2:#3b4b5b;
-  --accent:#7fb7d6; --accent-ink:#0e1a24; --gold:#e0a458; --track:#2c3a48; --sel:#22303e;
-  --ok:#7cc79a; --ok-bg:#183326; --bad:#f08a7e; --bad-bg:#3a1f1c; --contour:#1f2b37;
-  --shadow:0 1px 0 rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.3); --pass:#1f4560; --pass-ink:#f3e6c8; --pass-spine:#16344a; --pass-gold:#e0b46a; --guilloche:rgba(127,183,214,.05); --sea:#15283a; --land:#2b3746; --land-off:#212b36; --border:#71808f; --logo-filter:brightness(0) invert(1); color-scheme:dark}}
+/* Standard ist hell (auch bei System-Dunkelmodus); Dunkel nur über den Umschalter (data-theme, gemerkt in orbista.theme) */
 :root[data-theme="dark"]{
   --bg:#111a24; --card:#18232f; --ink:#ede6d6; --muted:#a2a9b0; --line:#2c3a48; --line2:#3b4b5b;
   --accent:#7fb7d6; --accent-ink:#0e1a24; --gold:#e0a458; --track:#2c3a48; --sel:#22303e;
   --ok:#7cc79a; --ok-bg:#183326; --bad:#f08a7e; --bad-bg:#3a1f1c; --contour:#1f2b37;
-  --shadow:0 1px 0 rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.3); --pass:#1f4560; --pass-ink:#f3e6c8; --pass-spine:#16344a; --pass-gold:#e0b46a; --guilloche:rgba(127,183,214,.05); --sea:#15283a; --land:#2b3746; --land-off:#212b36; --border:#71808f; --logo-filter:brightness(0) invert(1); color-scheme:dark}
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.3); --pass:#1f4560; --pass-ink:#f3e6c8; --pass-spine:#16344a; --pass-gold:#e0b46a; --guilloche:rgba(127,183,214,.05); --sea:#15283a; --land:#2b3746; --land-off:#212b36; --border:#71808f; --logo-filter:brightness(0) invert(1); --cta:#e89a4c; --cta-ink:#111a24; color-scheme:dark}
 *{box-sizing:border-box}
 html{color-scheme:light}
 img{max-width:100%}
@@ -77,6 +73,9 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .streak b{font-family:var(--f-body);font-size:inherit;color:var(--ink);font-weight:600}
 .btn{border:2px solid var(--ink);border-radius:10px;background:var(--card);color:var(--ink);font-family:var(--f-display);font-size:1.25rem;padding:14px 20px;min-height:58px;text-align:center;box-shadow:4px 4px 0 var(--ink);transition:transform .08s,box-shadow .08s}
 .btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+/* wichtige Knöpfe (Weiterreisen, Los, Weiter, OK) in Orange, weiter als Druckstempel */
+.btn.primary{background:var(--cta);color:var(--cta-ink)}
+.btn.primary small,.btn.go.primary small{color:var(--cta-ink);opacity:.8}
 .btn.ghost{border-color:var(--line2);box-shadow:none}
 .btn.ghost:active{transform:none}
 .btn.go{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;min-height:66px}

@@ -10,10 +10,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
 <style>
 /* Anmeldung im Stil „Atlas“ wie die App */
-:root{--bg:#f3eee3;--card:#fbf8f1;--ink:#1d2b3a;--muted:#5e6670;--line:#ddd3c0;--gold:#b5701c;--bad:#b03a2e;--contour:#d9cfbc;--logo-filter:none;
+:root{--bg:#f3eee3;--card:#fbf8f1;--ink:#1d2b3a;--muted:#5e6670;--line:#ddd3c0;--gold:#b5701c;--bad:#b03a2e;--contour:#d9cfbc;--logo-filter:none;--cta:#e58a33;--cta-ink:#1d2b3a;color-scheme:light;
   --f-display:"Young Serif",Georgia,serif;--f-body:"IBM Plex Sans",system-ui,sans-serif}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111a24;--card:#18232f;--ink:#ede6d6;--muted:#a2a9b0;--line:#2c3a48;--gold:#e0a458;--bad:#f08a7e;--contour:#1f2b37;--logo-filter:brightness(0) invert(1);color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#111a24;--card:#18232f;--ink:#ede6d6;--muted:#a2a9b0;--line:#2c3a48;--gold:#e0a458;--bad:#f08a7e;--contour:#1f2b37;--logo-filter:brightness(0) invert(1);color-scheme:dark}
+:root[data-theme="dark"]{--bg:#111a24;--card:#18232f;--ink:#ede6d6;--muted:#a2a9b0;--line:#2c3a48;--gold:#e0a458;--bad:#f08a7e;--contour:#1f2b37;--logo-filter:brightness(0) invert(1);--cta:#e89a4c;--cta-ink:#111a24;color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:17px/1.45 var(--f-body);display:flex;flex-direction:column;align-items:center;gap:36px;padding:48px 16px 40px;
@@ -29,7 +28,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(-
 button,.ghost{font:inherit;color:var(--ink);cursor:pointer;background:var(--card);border:2px solid var(--ink);border-radius:10px;box-shadow:3px 3px 0 var(--ink);padding:13px 18px;font-weight:600;text-decoration:none;text-align:center}
 button:active,.ghost:active{transform:translate(3px,3px);box-shadow:none}
 button:disabled{opacity:.5;cursor:wait}
-#b{font:400 1.3rem/1.2 var(--f-display);padding:15px 18px;box-shadow:4px 4px 0 var(--ink)}
+#b{background:var(--cta);color:var(--cta-ink);font:400 1.3rem/1.2 var(--f-display);padding:15px 18px;box-shadow:4px 4px 0 var(--ink)}
 .who{display:flex;flex-wrap:wrap;gap:10px}
 .who button{flex:1 1 auto;letter-spacing:.06em}
 .err{color:var(--bad);font-weight:600;min-height:1.4em}
@@ -41,6 +40,7 @@ button:disabled{opacity:.5;cursor:wait}
 .madeby img{width:58px;height:auto;display:block;filter:var(--logo-filter)}
 .madeby span{font-size:8px;line-height:1;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink)}
 </style>
+<script>try{if(localStorage.getItem("orbista.theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
 </head>
 <body>
 <form class="card" id="f" hidden>

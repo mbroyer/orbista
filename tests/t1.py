@@ -1,19 +1,26 @@
-# Playwright bei 390 px: erster Start, Weiterreisen, gezieltes Üben mit Auswählen und Eintippen, Übernahme des Flaggo-Stands, kein Querscrollen
+# Playwright bei 390 px: erster Start, Weiterreisen, gezieltes Üben mit Auswählen, Eintippen und Landkarte, Übernahme des Flaggo-Stands, kein Querscrollen
 import asyncio, os, json
 from playwright.async_api import async_playwright
 W = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/'
 
 # richtige Antwort zur aktuellen Frage (Kürzel und Spielart stehen an #q)
 ANSWER = """() => { const q = document.getElementById('q'), c = q.dataset.code, m = q.dataset.mode, D = ORBISTA_DATA;
-  if (['type', 'ctype', 'fctype'].includes(m)) return {m, v: m === 'type' ? (D.NAME_FIX[c] || new Intl.DisplayNames(['de'], {type: 'region'}).of(c))
+  if (m === 'loc') return {m, c, tap: true};
+  if (['type', 'ctype', 'fctype', 'mtype'].includes(m)) return {m, v: m === 'type' || m === 'mtype' ? (D.NAME_FIX[c] || new Intl.DisplayNames(['de'], {type: 'region'}).of(c))
     : D.CAPITAL[c].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')};
   return {m, c}; }"""
+
+async def tippe(pg, c):
+    # Land auf der Karte antippen; Kleinstaaten über ihren Kreis. Das Antippen selbst prüft t6 mit echten Klicks.
+    await pg.evaluate("""c => { const el = document.querySelector(`#map [data-c="${c}"]`), o = {bubbles: true, pointerId: 1};
+      el.dispatchEvent(new PointerEvent('pointerdown', o)); el.dispatchEvent(new PointerEvent('pointerup', o)); }""", c)
 
 async def antwort(pg, ok=True):
     a = await pg.evaluate(ANSWER)
     if 'v' in a:
         if ok: await pg.fill('#ti', a['v']); await pg.click('#tf button[type=submit]')
         else: await pg.click('#skip')
+    elif 'tap' in a: await tippe(pg, a['c'] if ok else ('FR' if a['c'] != 'FR' else 'DE'))
     elif ok: await pg.click('.opt[data-c="%s"]' % a['c'])
     else: await pg.click('.opt:not(.ok):not([data-c="%s"]) >> nth=0' % a['c'])
     return a['m']
@@ -29,7 +36,7 @@ async def gezielt(pg, path, typing, ok):
     await pg.click('[data-p="%s"]' % path); await pg.click('#regions [data-r="Europa"]')
     await pg.click('#answers [data-a="%d"]' % typing); await pg.click('#setupGo')
     modes, score = await runde(pg, ok); print(path, typing, sorted(modes), score)
-    want = {('f', 0): {'f2l', 'l2f'}, ('f', 1): {'type'}, ('c', 0): {'l2c', 'c2l'}, ('c', 1): {'ctype'}}[(path, typing)]
+    want = {('f', 0): {'f2l', 'l2f'}, ('f', 1): {'type'}, ('c', 0): {'l2c', 'c2l'}, ('c', 1): {'ctype'}, ('m', 0): {'loc', 'mark'}, ('m', 1): {'mtype'}}[(path, typing)]
     assert modes <= want, modes
     if ok: assert score == '10 / 10', score
     await pg.click('#homeBtn')
@@ -70,14 +77,14 @@ async def main():
         assert (await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))"))['sound'] is False
         await pg.click('#soundBtn')
 
-        # Weiterreisen bei „Beides“: neue Karten aus Europa, gemischt aus Flaggen- und Hauptstadtfragen
+        # Weiterreisen bei „Alles“: neue Karten aus Europa, gemischt aus Flaggen-, Hauptstadt- und Kartenfragen
         sub = await pg.inner_text('#goSub'); assert 'Europa' in sub, sub
         await pg.click('#go'); assert await pg.is_hidden('#madeby') and await pg.is_hidden('#tabs')
         modes, score = await runde(pg); print('weiter', sorted(modes), score)
         assert score == '10 / 10', score
         await pg.click('#homeBtn')
 
-        for path in ('f', 'c'):
+        for path in ('f', 'c', 'm'):
             for typing in (0, 1):
                 await gezielt(pg, path, typing, ok=False)
         await gezielt(pg, 'c', 1, ok=True)

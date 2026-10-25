@@ -22,7 +22,7 @@ async def main():
         await pg.click('#passBtn')
         assert await pg.is_hidden('#home') and await pg.is_hidden('#madeby') and await pg.is_visible('#tabs')
         # Sammelalbum: zuerst die erste Region mit Lücken (Europa), Ozeanien komplett eingeklebt
-        assert await pg.locator('.stamp').count() == 12 and await pg.locator('.stamp.on').count() == 0
+        assert await pg.locator('.stamp').count() == 18 and await pg.locator('.stamp.on').count() == 0
         assert await pg.locator('.album .slot').count() == 46 and await pg.locator('.album .slot.empty').count() == 46
         await pg.click('#passRegions [data-r="Ozeanien"]')
         assert await pg.locator('.album .slot').count() == 14 and await pg.locator('.album .sticker').count() == 14

@@ -1,6 +1,6 @@
 // Orbista: Reise-Codes prüfen und den Spielstand pro Code speichern (wie NumNum).
 // GET /stand/CODE  liest den Spielstand zu einem Code (404, wenn es noch keinen gibt, 403 bei unbekanntem Code).
-// PUT /stand/CODE  speichert den Spielstand zu einem Code: {"state": {"orbista.profile": {...}, "orbista.mastery": {...}, "orbista.capitals": {...}}, "ts": 1234567890}
+// PUT /stand/CODE  speichert den Spielstand zu einem Code: {"state": {"orbista.profile": {...}, "orbista.mastery": {...}, "orbista.capitals": {...}, "orbista.map": {...}}, "ts": 1234567890}
 // Einrichtung: siehe ANLEITUNG.md
 
 const ERLAUBT = ['https://asimplemanslab.com', 'https://www.asimplemanslab.com', 'https://mbroyer.github.io']; // nur Orbista auf der Website darf den Dienst nutzen
@@ -30,11 +30,11 @@ function codeErlaubt(code, env) {
   return liste.includes(code);
 }
 
-// Ein Orbista-Stand besteht aus Profil (XP, Serie, Stempel …) und den beiden Karteien Flaggen und Hauptstädte.
+// Ein Orbista-Stand besteht aus Profil (XP, Serie, Stempel …) und den Karteien Flaggen, Hauptstädte und Landkarte.
 function gueltig(st) {
   const p = st['orbista.profile'];
   if (!p || typeof p !== 'object' || typeof p.xp !== 'number') return false;
-  return ['orbista.mastery', 'orbista.capitals'].every((k) => st[k] === undefined || (st[k] && typeof st[k] === 'object'));
+  return ['orbista.mastery', 'orbista.capitals', 'orbista.map'].every((k) => st[k] === undefined || (st[k] && typeof st[k] === 'object'));
 }
 
 async function stand(req, env, origin, code) {

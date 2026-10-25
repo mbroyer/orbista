@@ -47,8 +47,8 @@ async def main():
         # erster Start: Willkommen, ohne Leiste unten
         assert await pg.is_visible('#welcome') and await pg.is_hidden('#home') and await pg.is_hidden('#tabs')
         await pg.screenshot(path=W + 't1_willkommen.png')
-        await pg.click('#wTopics [data-t="both"]'); await pg.click('#wGoals [data-g="100"]'); await pg.click('#begin')
-        P = await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))"); assert P['topic'] == 'both' and P['goal'] == 100, P
+        await pg.click('#wTopics [data-t="both"]'); await pg.click('#wGoals [data-g="20"]'); await pg.click('#begin')
+        P = await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))"); assert P['topic'] == 'both' and P['goalQ'] == 20 and 'goal' not in P, P
         paths = await pg.inner_text('#paths'); print(paths.splitlines()[:2])
         assert '2 von 197 gekonnt' in paths, paths
         assert await pg.is_visible('#madeby') and await pg.is_visible('#tabs')

@@ -21,11 +21,14 @@ async def main():
         # Reisepass vor der Runde: noch kein Stempel, 14 Länder mit Sternen, 183 grau
         await pg.click('#passBtn')
         assert await pg.is_hidden('#home') and await pg.is_hidden('#madeby') and await pg.is_visible('#tabs')
-        assert await pg.locator('.tile').count() == 197
-        assert await pg.locator('.tile.grey').count() == 183
-        assert await pg.locator('.stamp.on').count() == 0
-        txt = await pg.inner_text('#pass'); assert '0:42,3' in txt and 'Flagge → Land · Europa · 10 Fragen' in txt, txt
-        await pg.click('#passKinds [data-k="c"]'); assert await pg.locator('.tile.grey').count() == 197
+        # Sammelalbum: zuerst die erste Region mit Lücken (Europa), Ozeanien komplett eingeklebt
+        assert await pg.locator('.stamp').count() == 12 and await pg.locator('.stamp.on').count() == 0
+        assert await pg.locator('.album .slot').count() == 46 and await pg.locator('.album .slot.empty').count() == 46
+        await pg.click('#passRegions [data-r="Ozeanien"]')
+        assert await pg.locator('.album .slot').count() == 14 and await pg.locator('.album .sticker').count() == 14
+        txt = await pg.inner_text('#pass'); assert '14 von 14 eingeklebt' in txt and '0:42,3' in txt and 'Flagge → Land · Europa · 10 Fragen' in txt, txt
+        await pg.click('#passKinds [data-k="c"]'); assert await pg.locator('.album .sticker').count() == 0 and await pg.locator('.album .slot.empty').count() == 14
+        await pg.click('#passKinds [data-k="f"]')
         await pg.click('#tabs [data-tab="home"]'); assert await pg.is_visible('#home')
 
         # Runde Ozeanien, alles richtig: Stempel Ozeanien · Flaggen, +100 XP
@@ -45,6 +48,8 @@ async def main():
         await pg.click('#homeBtn'); await pg.click('#passBtn')
         assert await pg.locator('.stamp.on').count() == 1
         assert await pg.get_attribute('.stamp.on', 'data-stamp') == 'Ozeanien|f'
+        assert await pg.evaluate("/\\d\\d\\.\\d\\d\\.20\\d\\d/.test(document.querySelector('.stamp.on').textContent)"), 'Datum im Stempel'
+        assert 'unterwegs seit' in await pg.inner_text('.cover')
         assert await pg.evaluate('document.documentElement.scrollWidth<=innerWidth'), 'Querscrollen'
         await pg.screenshot(path=W + 't4_pass.png', full_page=True)
         assert not errs, errs

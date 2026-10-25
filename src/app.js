@@ -179,10 +179,13 @@ function renderHome(){
   const row=(p,ic,t,sub,off)=>`<button class="line" data-p="${p}"${off?" disabled":""}>${svg(ic)}<span class="tx"><b>${t}</b><span>${sub}</span></span>${svg(off?ICON.lock:ICON.chev,"chev")}</button>`;
   $("paths").innerHTML=row("f",ICON.flag,"Flaggen",`${cnt("f")} von ${ALL.length} gekonnt`)+row("c",ICON.pin,"Hauptstädte",`${cnt("c")} von ${ALL.length} gekonnt`)
     +row("race",ICON.clock,"Zeitrennen",!raceOpen()?`Ab Level ${RACE_LEVEL}`:times.length?`Schnellste Runde ${fmt(Math.min(...times))}`:"Zehn Fragen gegen die Uhr",!raceOpen());
-  $("topicLine").innerHTML=`„Weiterreisen“ fragt ${P.topic==="flag"?"Flaggen":P.topic==="cap"?"Hauptstädte":"Flaggen und Hauptstädte"}. <button class="link" id="changeTopic">Ändern</button>`;
+  $("topicLine").innerHTML=`„Weiterreisen“ fragt ${P.topic==="flag"?"Flaggen":P.topic==="cap"?"Hauptstädte":"Flaggen und Hauptstädte"}. <button class="link" id="changeTopic">Ändern</button>`+codeLine();
 }
 function goHome(){renderHome();show("home")}
 $("status").onclick=e=>{if(e.target.closest("#goalBtn")){P.goal=P.goal===30?50:P.goal===50?100:30;saveProfile();renderHome()}};
+// Mit Reise-Code (Anmeldeseite auf der Website) steht der Code unter dem Thema, mit Link zum Wechseln
+function codeLine(){let c=null;try{c=localStorage.getItem("orbista-code")}catch(e){}
+  return c&&/^[A-Z0-9-]{4,24}$/.test(c)?`<br>Reise-Code ${c} · <a class="link" id="switchCode" href="./?wechseln">Wechseln</a>`:""}
 $("topicLine").onclick=e=>{if(e.target.id==="changeTopic")openWelcome()};
 $("go").onclick=()=>startAuto();
 const SPK='<path d="M4 9h4l5-4v14l-5-4H4z"/>';

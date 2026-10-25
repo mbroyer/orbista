@@ -180,6 +180,8 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .cover small{font-size:.62rem;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:var(--pass-gold)}
 .cover h2{font-size:1.45rem;line-height:1.1}
 .cover span{font-size:.8rem;opacity:.8}
+.coverstats{display:none}
+.albumbar{display:flex;flex-direction:column;gap:12px}
 .visa{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:12px;
   background-image:repeating-linear-gradient(135deg,transparent 0 9px,var(--guilloche) 9px 10px)}
 .visahead{display:flex;justify-content:space-between;align-items:baseline}
@@ -266,26 +268,45 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
   /* Frage: mit großer Flagge zweispaltig (Flagge links, Antworten rechts), sonst eine mittige Spalte */
   #game{max-width:1040px;width:100%;margin-inline:auto}
   #game .hud{max-width:none}
-  .q{max-width:680px;width:100%;margin-inline:auto}
+  .q{max-width:680px;width:100%;margin-inline:auto;padding-top:6vh}
   .q h2{font-size:2rem}
   .q .opts:not(.imgs){display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
   .opt{min-height:64px;font-size:1.15rem}
-  .q:has(.stage){max-width:none;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);column-gap:40px;row-gap:18px;align-items:start}
+  /* Flagge links, Frage, Antworten und Weiter rechts, beide Spalten gleich breit */
+  .q:has(.stage){max-width:960px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:48px;row-gap:16px;align-items:start;align-content:start;padding-top:3vh}
   .q:has(.stage)>*{grid-column:2}
-  .q:has(.stage)>.kicker,.q:has(.stage)>h2{grid-column:1/-1}
-  .q:has(.stage)>.stage{grid-column:1;grid-row:3/span 6;padding:40px}
+  .q:has(.stage)>.stage{grid-column:1;grid-row:1/span 8;padding:32px;align-self:start;aspect-ratio:1;align-items:center}
+  .q:has(.stage)>.kicker{margin-top:0}
   .q:has(.stage) .flag{max-width:none}
   .q:has(.stage) .opts{display:flex}
   .q .flag.small{width:128px}
-  .q .opts.imgs{max-width:560px}
+  .q:has(.imgs){max-width:960px}
+  .q .opts.imgs{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .q:has(.imgs)>.row{max-width:460px;margin-inline:auto}
+  .q:not(:has(.stage)){text-align:center}
+  .q:not(:has(.stage)) .fb{align-items:center}
+  .q:not(:has(.stage)) .fb .stars{align-self:center}
+  .q:not(:has(.stage)) .opt{text-align:left}
+  .q:not(:has(.stage))>.flag.small{align-self:center}
 
   /* Ergebnis und Reisepass */
   #result{max-width:760px;width:100%;margin-inline:auto}
-  #pass{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);column-gap:40px;align-items:start}
-  #pass>.passcol:first-child{position:sticky;top:24px}
-  .stamps{gap:12px}
+  /* Reisepass: Umschlag als breites Band, Visa als Leiste, darunter das Album in voller Breite */
+  #pass{gap:24px}
+  .cover{padding:22px 28px;gap:22px}
+  .cover h2{font-size:1.9rem}
+  .cover .globe{width:72px;height:72px}
+  .covermini{display:none}
+  .cover>.coverstats{display:flex;flex-direction:row;gap:40px;margin-left:auto}
+  .coverstats>div{display:flex;flex-direction:column;gap:2px;align-items:flex-end}
+  .coverstats b{font-family:var(--f-display);font-weight:400;font-size:1.5rem;color:var(--pass-gold);white-space:nowrap}
+  .coverstats small{font-size:.75rem;opacity:.8;letter-spacing:0;text-transform:none;font-weight:400;color:var(--pass-ink)}
+  .visa{padding:18px 22px}
+  .stamps{grid-template-columns:repeat(6,108px);justify-content:space-between;row-gap:14px}
+  .albumbar{flex-direction:row;align-items:center;gap:16px;flex-wrap:wrap}
+  .albumbar .seg{flex:none;width:300px}
   .stamp b{font-size:.85rem}.stamp small{font-size:.58rem}.stamp i{font-size:.6rem}
-  .album{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .album{grid-template-columns:repeat(6,minmax(0,1fr));gap:22px 16px;padding:22px 20px}
 }
 
 @media (max-width:420px){.pill .pt{display:none}}

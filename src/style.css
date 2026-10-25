@@ -48,6 +48,24 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 
 /* Heute: Tagesziel, Serie und der Hauptknopf */
 .todayrow{display:flex;align-items:center;gap:16px}
+/* Deine Welt: Punktkarte im Stil des Reisepass-Umschlags */
+.world{background:var(--pass);color:var(--pass-ink);border-radius:10px;padding:16px 14px 14px;display:flex;flex-direction:column;gap:12px;box-shadow:4px 4px 0 var(--ink)}
+.worldhead{display:flex;justify-content:space-between;align-items:baseline}
+.worldhead h2{font-size:1.35rem;font-weight:400}
+.worldhead b{font-family:var(--f-display);font-weight:400;font-size:1.35rem;color:var(--pass-gold)}
+.dots{width:100%;height:auto;display:block}
+.dots circle{fill:var(--pass-ink);opacity:.2}
+.dots .s1{opacity:.75}
+.dots .s2{fill:var(--pass-gold);opacity:1}
+.dots .n{transform-box:fill-box;transform-origin:center;animation:dotpop 1.2s ease-out 2}
+@keyframes dotpop{0%{transform:scale(1)}40%{transform:scale(1.9)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.dots .n{animation:none}}
+.worldkey{display:flex;gap:14px;flex-wrap:wrap;font-size:.75rem;opacity:.85}
+.worldkey span{display:flex;align-items:center;gap:6px}
+.worldkey i{width:8px;height:8px;border-radius:50%;background:var(--pass-ink)}
+.worldkey .k0{opacity:.3}.worldkey .k1{opacity:.75}.worldkey .k2{background:var(--pass-gold)}
+.worldnew{margin:0;font-size:.85rem;opacity:.9}
+.worldnew b{font-weight:600;color:var(--pass-gold)}
 .goal{border:0;background:transparent;padding:0;position:relative;width:68px;height:68px;flex:none}
 .goal svg{width:68px;height:68px;transform:rotate(-90deg)}
 .goal .ring0{fill:none;stroke:var(--track);stroke-width:6}
@@ -260,7 +278,8 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 
   /* Startseite: links heute und Weiterreisen, rechts gezielt üben */
   #home{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);column-gap:40px;row-gap:16px;align-content:start;
-    grid-template-areas:"top top" "today lbl" "today paths" "topic paths" "made made"}
+    grid-template-areas:"top top" "today world" "lbl world" "paths world" "topic world" "made made"}
+  #home>#world{grid-area:world;align-self:start;padding:22px 22px 18px}
   #home>.top{grid-area:top;margin-bottom:8px}
   #home>.today{grid-area:today;align-self:start;padding:24px;gap:22px}
   #home>.label{grid-area:lbl;align-self:end}

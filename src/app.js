@@ -178,7 +178,7 @@ function autoPlan(){
 let plan=null;
 function renderHome(){
   const dx=dayQ(),g=P.goalQ,d=Math.min(dx,g),sk=streakNow(),r=28,u=2*Math.PI*r,left=g-dx;
-  renderSound();
+  renderSound();renderWorld();
   $("status").innerHTML=`<button class="goal" id="goalBtn" aria-label="Tagesziel ${dx} von ${g} Fragen, antippen zum Ändern"><svg viewBox="0 0 68 68" aria-hidden="true"><circle cx="34" cy="34" r="${r}" class="ring0"/><circle cx="34" cy="34" r="${r}" class="ring1" stroke-dasharray="${u*d/g} ${u}"/></svg><b>${dx}</b></button>
   <div class="todaytxt"><b>Deine Reise heute</b><span>${left>0?`${dx} von ${g} Fragen · noch ${left} bis zum Tagesziel`:`Tagesziel geschafft · ${dx} Fragen`}</span><span class="streak">Serie: <b>${sk}</b> ${sk===1?"Tag":"Tage"} · ${Object.keys(P.stamps||{}).length} von ${KINDS.length*ORDER.filter(r=>REGIONS[r]).length} Visa</span></div>`;
   plan=autoPlan();
@@ -191,6 +191,23 @@ function renderHome(){
   $("topicLine").innerHTML=`„Weiterreisen“ fragt ${topicText(P.topic)}. <button class="link" id="changeTopic">Ändern</button>`+codeLine();
 }
 function goHome(){renderHome();show("home")}
+
+// Deine Welt: Punktkarte, jedes Land leuchtet auf, sobald es entdeckt ist (ein Stern), und wird gold, wenn es
+// in allen Karten des Themas gekonnt ist (zwei Sterne). Punkte aus src/dots.js (tools/dots.py).
+function renderWorld(){
+  const D=window.ORBISTA_DOTS,ks=kindsOf(P.topic||"both"),T=today(),cnt=[0,0,0],fresh=[];
+  const dots=Object.entries(D.c).map(([c,cells])=>{
+    const lv=ks.every(k=>stars(k,c)>=2)?2:ks.some(k=>stars(k,c)>=1)?1:0,isNew=lv>0&&ks.some(k=>{const m=card(k,c);return m&&m.d1===T});
+    cnt[lv]++;if(isNew)fresh.push(c);
+    return cells.map(i=>`<circle class="s${lv}${isNew?" n":""}" cx="${i%D.cols+.5}" cy="${Math.floor(i/D.cols)+.5}" r=".4"/>`).join("");
+  }).join("");
+  const all=cnt[0]+cnt[1]+cnt[2],names=fresh.map(c=>C[c].name).sort((a,b)=>a.localeCompare(b,"de"));
+  const list=names.length<=3?names.join(", ").replace(/, ([^,]*)$/," und $1"):`${names.slice(0,2).join(", ")} und ${names.length-2} weitere`;
+  $("world").innerHTML=`<div class="worldhead"><h2>Deine Welt</h2><b>${Math.round(100*cnt[2]/all)} %</b></div>
+  <svg class="dots" viewBox="0 0 ${D.cols} ${D.rows}" role="img" aria-label="Weltkarte: ${cnt[1]+cnt[2]} von ${all} Ländern entdeckt, ${cnt[2]} gekonnt">${dots}</svg>
+  <div class="worldkey"><span><i class="k2"></i>${cnt[2]} gekonnt</span><span><i class="k1"></i>${cnt[1]} entdeckt</span><span><i class="k0"></i>${cnt[0]} noch unbekannt</span></div>
+  ${fresh.length?`<p class="worldnew"><b>Heute neu auf der Karte:</b> ${list}</p>`:""}`;
+}
 $("status").onclick=e=>{if(e.target.closest("#goalBtn")){P.goalQ=P.goalQ===5?10:P.goalQ===10?20:5;saveProfile();renderHome()}};
 // Mit Reise-Code (Anmeldeseite auf der Website) steht der Code unter dem Thema, mit Link zum Wechseln
 function codeLine(){let c=null;try{c=localStorage.getItem("orbista-code")}catch(e){}

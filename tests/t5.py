@@ -47,7 +47,7 @@ async def main():
         # Anmelden: alter Stand wird übernommen und sofort hochgeladen
         await pg.fill('#c', 'kompass-1'); await pg.click('#b')
         await pg.wait_for_selector('#go'); await pg.wait_for_timeout(300)
-        assert await pg.inner_text('#lvlPill') and 'Reise-Code KOMPASS-1' in await pg.inner_text('#topicLine')
+        assert 'Reise-Code KOMPASS-1' in await pg.inner_text('#topicLine')
         assert PUTS and PUTS[-1][1]['state']['orbista.profile']['xp'] == 120 and 'DE' in PUTS[-1][1]['state']['orbista.mastery'], PUTS
         keys = await pg.evaluate("Object.keys(localStorage).sort()")
         assert 'orbista.profile@KOMPASS-1' in keys and 'orbista.mastery@KOMPASS-1' in keys and 'orbista-ts@KOMPASS-1' in keys, keys

@@ -44,17 +44,13 @@ function record(k,c,ok,typed){
 }
 const starStr=n=>"★".repeat(n)+"☆".repeat(3-n);
 
-// Reisepunkte (XP), Level, Tagesziel und Serie
+// Reisepunkte (XP, nur im Hintergrund für die spätere Rangliste), Tagesziel und Serie
 const PKEY="orbista.profile";
 let P={xp:0,day:0,dayXp:0,dayQ:0,goalQ:10,streak:0,goalDay:-9,restWeek:-1};
 try{Object.assign(P,JSON.parse(localStorage.getItem(PKEY)||"{}"))}catch(e){}
 // Früher war das Tagesziel in XP (30/50/100), jetzt in Fragen (5/10/20)
 if(P.goal!==undefined){if(!(P.goalQ>0)||P.goalQ===10)P.goalQ={30:5,50:10,100:20}[P.goal]||10;delete P.goal}
 function saveProfile(){try{localStorage.setItem(PKEY,JSON.stringify(P))}catch(e){}}
-const xpFor=L=>50*L*(L-1); // Level 2 bei 100, 5 bei 1.000, 10 bei 4.500 XP
-const levelOf=xp=>{let L=1;while(xpFor(L+1)<=xp)L++;return L};
-const TITLES=["Tourist","Rucksackreisender","Entdecker","Kartograf","Weltenbummler","Botschafter"];
-const titleOf=L=>TITLES[Math.min(TITLES.length-1,Math.floor(L/5))];
 const week=d=>Math.floor((d+3)/7); // Wochen beginnen montags
 // Serie zählt, solange das Tagesziel gestern erreicht wurde; ein verpasster Tag pro Woche wird als Ruhetag überbrückt
 const restOk=T=>P.goalDay===T-2&&P.restWeek!==week(T-1);
@@ -124,9 +120,10 @@ const poolOf=r=>r==="Alle"?ALL:REGIONS[r].split(" ");
 const regionName=r=>r==="Alle"?"Ganze Welt":r;
 const isDue=(k,c)=>{const m=card(k,c);return !!m&&m.due<=today()&&m.s<3};
 
-// Zeitrennen: feste Strecke gegen die Uhr, jeder Fehler kostet 5 Sekunden, freigeschaltet ab Level 2
-const PENALTY=5000, RACE_LEVEL=2;
-const raceOpen=()=>levelOf(P.xp)>=RACE_LEVEL;
+// Zeitrennen: feste Strecke gegen die Uhr, jeder Fehler kostet 5 Sekunden, freigeschaltet mit dem ersten Visum
+// (wer schon eine Bestzeit hat, behält den Zugang)
+const PENALTY=5000;
+const raceOpen=()=>Object.keys(P.stamps||{}).length>0||Object.keys(P.best||{}).length>0;
 const fmt=ms=>{const t=Math.round(ms/100),m=Math.floor(t/600),sec=Math.floor(t/10)%60;return `${m}:${String(sec).padStart(2,"0")},${t%10}`};
 const secs=ms=>(ms/1000).toFixed(1).replace(".",",")+" s";
 
@@ -172,18 +169,17 @@ function autoPlan(){
 // Startseite
 let plan=null;
 function renderHome(){
-  const L=levelOf(P.xp),b=xpFor(L+1),dx=dayQ(),g=P.goalQ,d=Math.min(dx,g),sk=streakNow(),r=28,u=2*Math.PI*r,left=g-dx;
-  $("lvlPill").innerHTML=`Level ${L}<span class="pt"> · ${titleOf(L)}</span>`;
+  const dx=dayQ(),g=P.goalQ,d=Math.min(dx,g),sk=streakNow(),r=28,u=2*Math.PI*r,left=g-dx;
   renderSound();
   $("status").innerHTML=`<button class="goal" id="goalBtn" aria-label="Tagesziel ${dx} von ${g} Fragen, antippen zum Ändern"><svg viewBox="0 0 68 68" aria-hidden="true"><circle cx="34" cy="34" r="${r}" class="ring0"/><circle cx="34" cy="34" r="${r}" class="ring1" stroke-dasharray="${u*d/g} ${u}"/></svg><b>${dx}</b></button>
-  <div class="todaytxt"><b>Deine Reise heute</b><span>${left>0?`${dx} von ${g} Fragen · noch ${left} bis zum Tagesziel`:`Tagesziel geschafft · ${dx} Fragen`}</span><span class="streak">Serie: <b>${sk}</b> ${sk===1?"Tag":"Tage"} · ${b-P.xp} XP bis Level ${L+1}</span></div>`;
+  <div class="todaytxt"><b>Deine Reise heute</b><span>${left>0?`${dx} von ${g} Fragen · noch ${left} bis zum Tagesziel`:`Tagesziel geschafft · ${dx} Fragen`}</span><span class="streak">Serie: <b>${sk}</b> ${sk===1?"Tag":"Tage"} · ${Object.keys(P.stamps||{}).length} von ${2*ORDER.filter(r=>REGIONS[r]).length} Visa</span></div>`;
   plan=autoPlan();
   const n=plan.items.length;
   $("goSub").textContent=plan.due>=n?`${n} Wiederholungen`:`${n} Fragen · ${regionName(plan.region)}`+(plan.due?` · ${plan.due} zum Wiederholen`:"");
   const cnt=k=>ALL.filter(c=>known(k,c)).length, times=Object.values(P.best||{});
   const row=(p,ic,t,sub,off)=>`<button class="line" data-p="${p}"${off?" disabled":""}>${svg(ic)}<span class="tx"><b>${t}</b><span>${sub}</span></span>${svg(off?ICON.lock:ICON.chev,"chev")}</button>`;
   $("paths").innerHTML=row("f",ICON.flag,"Flaggen",`${cnt("f")} von ${ALL.length} gekonnt`)+row("c",ICON.pin,"Hauptstädte",`${cnt("c")} von ${ALL.length} gekonnt`)
-    +row("race",ICON.clock,"Zeitrennen",!raceOpen()?`Ab Level ${RACE_LEVEL}`:times.length?`Schnellste Runde ${fmt(Math.min(...times))}`:"Zehn Fragen gegen die Uhr",!raceOpen());
+    +row("race",ICON.clock,"Zeitrennen",!raceOpen()?"Ab dem ersten Visum im Reisepass":times.length?`Schnellste Runde ${fmt(Math.min(...times))}`:"Zehn Fragen gegen die Uhr",!raceOpen());
   $("topicLine").innerHTML=`„Weiterreisen“ fragt ${P.topic==="flag"?"Flaggen":P.topic==="cap"?"Hauptstädte":"Flaggen und Hauptstädte"}. <button class="link" id="changeTopic">Ändern</button>`+codeLine();
 }
 function goHome(){renderHome();show("home")}
@@ -218,7 +214,7 @@ function renderSetup(){
     return `<button class="line" data-r="${r}" aria-pressed="${S.region===r}"><span class="row1"><b>${regionName(r)}</b><span>${n} von ${pool.length}</span></span><span class="meter"><i style="width:${100*n/pool.length}%"></i></span></button>`}).join("");
   $("answers").innerHTML=[[0,"Auswählen"],[1,"Eintippen"]].map(([v,t])=>`<button data-a="${v}" aria-pressed="${S.typing===!!v}">${t}</button>`).join("");
   const best=(P.best||{})[raceKey()];
-  $("answerHint").textContent=race?(best?`Deine Bestzeit für diese Strecke: ${fmt(best)}`:"Noch keine Bestzeit für diese Strecke."):"Eintippen gibt doppelte XP und zählt für den dritten Stern.";
+  $("answerHint").textContent=race?(best?`Deine Bestzeit für diese Strecke: ${fmt(best)}`:"Noch keine Bestzeit für diese Strecke."):"Eintippen zählt für den dritten Stern.";
   const due=poolOf(S.region).filter(c=>isDue(k,c)).length;
   $("setupGoSub").textContent=`${regionName(S.region)} · ${ROUND} Fragen`+(due&&!race?` · ${due} zum Wiederholen`:"");
 }
@@ -243,7 +239,7 @@ function startSetup(){
 }
 function begin(o){
   clearInterval(G&&G.clock);
-  G=Object.assign({race:false,times:[],penalty:0,i:0,right:0,streak:0,best:0,missed:[],locked:false,hint:0,xp:0,level:levelOf(P.xp),newStars:0,mastered:0,goal:false},o,{list:o.items});
+  G=Object.assign({race:false,times:[],penalty:0,i:0,right:0,streak:0,best:0,missed:[],locked:false,hint:0,xp:0,newStars:0,mastered:0,goal:false},o,{list:o.items});
   show("game");
   if(G.race)G.clock=setInterval(hud,100);
   next();
@@ -313,7 +309,7 @@ function answer(ok,code,picked){
     G.timer=setTimeout(()=>{$("q").classList.remove("shake");G.i++;next()},ok?250:1200);
     return;
   }
-  fb.innerHTML=`<b>${ok?"Richtig! +"+xp+" XP":"Das war "+want}</b><span>${x.name} · ${x.cap} · ${x.region}${ok?stk:""}</span><span class="stars${gain>0?" up":""}" aria-label="${s} von 3 Sternen">${starStr(s)}</span>${note?`<span class="note">${note}</span>`:""}`;
+  fb.innerHTML=`<b>${ok?"Richtig!":"Das war "+want}</b><span>${x.name} · ${x.cap} · ${x.region}${ok?stk:""}</span><span class="stars${gain>0?" up":""}" aria-label="${s} von 3 Sternen">${starStr(s)}</span>${note?`<span class="note">${note}</span>`:""}`;
   if(!ok) $("q").classList.add("shake");
   const last=G.i+1>=G.list.length;
   const row=document.createElement("div");row.className="row";
@@ -336,7 +332,7 @@ function raceResult(){
   const cmp=!old?"Erste Bestzeit für diese Strecke":rec?`Neue Bestzeit, ${secs(old-total)} schneller als dein Rekord`:`${secs(total-old)} langsamer als deine Bestzeit (${fmt(old)})`;
   return `<div class="label">Zeitrennen</div><div class="score">${fmt(total)}</div>
   <p class="sub">${G.right} von ${G.list.length} richtig${G.penalty?` · ${G.penalty/1000} s Strafzeit`:""} · Schnitt ${secs(total/G.list.length)} pro Frage</p>
-  <div class="${rec?"levelup":"gain"}">${cmp}${rec?" · +30 XP":""}</div>
+  <div class="${rec?"levelup":"gain"}">${cmp}</div>
   <div class="times"><div><small>Schnellste Antwort</small><b>${secs(by[0][1])}</b><span>${lbl(by[0][0])}</span></div><div><small>Langsamste Antwort</small><b>${secs(by[by.length-1][1])}</b><span>${lbl(by[by.length-1][0])}</span></div></div>`;
 }
 function finish(){
@@ -347,17 +343,14 @@ function finish(){
   const msg=p===100?"Perfekt, kein einziger Fehler.":p>=80?"Stark!":p>=50?"Gut gemacht, da geht noch mehr.":"Weiter üben, es lohnt sich.";
   if(p===100&&n>=10){G.xp+=30;addXp(30)}
   const st=newStamps();st.forEach(()=>{G.xp+=STAMP_XP;addXp(STAMP_XP)});
-  const L=levelOf(P.xp),a=xpFor(L),b=xpFor(L+1);
-  play(L>G.level||G.goal?"big":"end");if(st.length)play("stamp",L>G.level||G.goal?2200:1100);
-  const extra=[G.newStars?`${G.newStars} neue${G.newStars===1?"r":""} Stern${G.newStars===1?"":"e"}`:"",G.mastered?`${G.mastered} gemeistert`:"",p===100&&n>=10?"Bonus für die perfekte Runde":""].filter(Boolean).join(" · ");
+  play(G.goal?"big":"end");if(st.length)play("stamp",G.goal?2200:1100);
+  const extra=[G.newStars?`${G.newStars} neue${G.newStars===1?"r":""} Stern${G.newStars===1?"":"e"}`:"",G.mastered?`${G.mastered} gemeistert`:"",p===100&&n>=10?"Perfekte Runde":""].filter(Boolean).join(" · ");
   const seen=new Set(),miss=G.missed.filter(it=>{const k=it.c+kindOf(it.m);if(seen.has(k))return false;seen.add(k);return true});
   $("result").innerHTML=`<div class="sndrow"><span></span>${sndBtn()}</div>${race||`<div class="label">Ergebnis</div><div class="score">${G.right} / ${n}</div><p class="sub">${msg} Beste Serie: ${G.best}.</p>`}
-  <div class="gain"><b>+${G.xp} XP</b>${extra?`<span>${extra}</span>`:""}</div>
-  ${L>G.level?`<div class="levelup">Level ${L} erreicht: ${titleOf(L)}</div>`:""}
-  ${st.map(([r,k])=>`<div class="levelup stamp-new">Neuer Stempel im Reisepass: ${r} · ${KIND[k]} · +${STAMP_XP} XP</div>`).join("")}
+  ${extra?`<div class="gain"><span>${extra}</span></div>`:""}
+  ${st.map(([r,k])=>`<div class="levelup stamp-new">Neues Visum im Reisepass: ${r} · ${KIND[k]}</div>`).join("")}
   ${G.goal?`<div class="levelup">Tagesziel geschafft · ${streakNow()} ${streakNow()===1?"Tag":"Tage"} Serie</div>`:""}
-  <div class="mastery"><div class="label">Level ${L} · ${P.xp-a} / ${b-a} XP</div><div class="bar xp"><div style="width:${100*(P.xp-a)/(b-a)}%"></div></div>
-  <div class="label">Tagesziel · ${Math.min(dayQ(),P.goalQ)} / ${P.goalQ} Fragen</div><div class="bar"><div style="width:${Math.min(100,100*dayQ()/P.goalQ)}%"></div></div></div>
+  <div class="mastery">  <div class="label">Tagesziel · ${Math.min(dayQ(),P.goalQ)} / ${P.goalQ} Fragen</div><div class="bar"><div style="width:${Math.min(100,100*dayQ()/P.goalQ)}%"></div></div></div>
   ${miss.length?`<div class="label">Das war noch schwer</div><div class="missed">${miss.map(({c,m})=>`<figure><img src="${flag(c)}" alt=""><figcaption>${C[c].name}${kindOf(m)==="c"?`<small>${C[c].cap}</small>`:""}</figcaption></figure>`).join("")}</div>`:""}
   <div class="row">${miss.length?`<button class="btn" id="again">Fehler nochmal üben</button>`:""}<button class="btn ${miss.length?"ghost":""}" id="new">${G.next}</button></div>
   <button class="btn ghost" id="homeBtn">Zur Startseite</button>`;
@@ -383,7 +376,7 @@ let passKind="f",passRegion=null;
 const dayStr=d=>{const x=new Date(d*864e5);return [x.getUTCDate(),x.getUTCMonth()+1,x.getUTCFullYear()].map((v,i)=>i<2?String(v).padStart(2,"0"):v).join(".")};
 // Reisepass: Umschlag, Visa-Seite mit den Regionsstempeln und darunter pro Region ein Sammelalbum (Sticker ab einem Stern)
 function renderPass(){
-  const tot=k=>ALL.reduce((a,c)=>a+stars(k,c),0), stamps=P.stamps||{}, L=levelOf(P.xp);
+  const tot=k=>ALL.reduce((a,c)=>a+stars(k,c),0), stamps=P.stamps||{}, got=ALL.filter(c=>stars("f",c)||stars("c",c)).length;
   const best=Object.entries(P.best||{}).sort((a,b)=>a[0]<b[0]?-1:1);
   const first=P.since||Math.min(...[...Object.values(M.f),...Object.values(M.c)].map(x=>x.d1).filter(d=>d>0));
   const regs=ORDER.filter(r=>REGIONS[r]);
@@ -393,13 +386,13 @@ function renderPass(){
   const tilt=[-3,2,0,-2,3,-1,2,-3,1,-2,2,0,1];
   $("pass").innerHTML=`<div class="sndrow"><span class="label">Reisepass</span>${sndBtn()}</div><div class="passcol"><div class="cover">
     <svg class="globe" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26M4.5 8h21M4.5 22h21"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg>
-    <div><small>Reisepass · Orbista</small><h2>${titleOf(L)}</h2><span>Level ${L}${isFinite(first)?` · unterwegs seit ${dayStr(first)}`:""}</span>
+    <div><small>Reisepass · Orbista</small><h2>${got} ${got===1?"Land":"Länder"} besucht</h2><span>${isFinite(first)?`unterwegs seit ${dayStr(first)}`:"bereit zur Abreise"}</span>
     <span class="covermini">★ ${tot("f")} Flaggen · ★ ${tot("c")} Hauptstädte</span></div>
     <div class="coverstats"><div><b>★ ${tot("f")}</b><small>Flaggen-Sterne</small></div><div><b>★ ${tot("c")}</b><small>Hauptstadt-Sterne</small></div><div><b>${Object.keys(stamps).length} / ${2*regs.length}</b><small>Visa</small></div></div></div>
   <div class="visa"><div class="visahead"><h3>Visa</h3><small>${Object.keys(stamps).length} von ${2*regs.length}</small></div>
   <div class="stamps">${regs.map(r=>["f","c"].map(k=>{const on=stamps[r+"|"+k];
     return `<div class="stamp${on?" on":""} ${k}" data-stamp="${r}|${k}" aria-label="${r}, ${KIND[k]}${on?", erreicht":", noch offen"}"><small>${KIND[k]}</small><b>${r}</b>${on?`<i>${dayStr(on)}</i>`:""}</div>`}).join("")).join("")}</div>
-  <p class="muted race">Ein Visum gibt es, wenn alle Flaggen oder alle Hauptstädte einer Region zwei Sterne haben. Es bringt ${STAMP_XP} XP.</p></div></div>
+  <p class="muted race">Ein Visum gibt es, wenn alle Flaggen oder alle Hauptstädte einer Region zwei Sterne haben. Das erste Visum schaltet das Zeitrennen frei.</p></div></div>
   <div class="passcol"><div class="label">Sammelalbum</div>
   <div class="albumbar"><div class="seg" id="passKinds">${["f","c"].map(k=>`<button data-k="${k}" aria-pressed="${passKind===k}">${KIND[k]}</button>`).join("")}</div>
   <div class="chips" id="passRegions">${regs.map(r=>`<button class="chip" data-r="${r}" aria-pressed="${r===passRegion}">${r}</button>`).join("")}</div></div>
@@ -408,7 +401,7 @@ function renderPass(){
     return n?`<div class="slot" data-c="${c}"><div class="sticker" style="--tilt:${tilt[i%tilt.length]}deg"><img src="${flag(c)}" alt=""></div><b>${C[c].name}</b>${passKind==="c"?`<span>${C[c].cap}</span>`:""}<i aria-label="${n} von 3 Sternen">${starStr(n)}</i></div>`
       :`<div class="slot empty" data-c="${c}"><div class="hole">${i+1}</div><b>${C[c].name}</b><span>${passKind==="c"?"Hauptstadt ?":"noch frei"}</span></div>`}).join("")}</div>
   <div class="label">Bestzeiten im Zeitrennen</div>
-  ${best.length?`<div class="besttimes">${best.map(([key,ms])=>{const [m,r,l]=key.split("|");return `<div><span>${MODE_NAME[m]||m} · ${regionName(r)} · ${+l?l+" Fragen":"alle"}</span><b>${fmt(ms)}</b></div>`}).join("")}</div>`:`<p class="muted race">Noch keine Bestzeiten. Das Zeitrennen gibt es ab Level ${RACE_LEVEL}.</p>`}</div>`;
+  ${best.length?`<div class="besttimes">${best.map(([key,ms])=>{const [m,r,l]=key.split("|");return `<div><span>${MODE_NAME[m]||m} · ${regionName(r)} · ${+l?l+" Fragen":"alle"}</span><b>${fmt(ms)}</b></div>`}).join("")}</div>`:`<p class="muted race">Noch keine Bestzeiten. Das Zeitrennen gibt es ab dem ersten Visum.</p>`}</div>`;
   renderSound();
 }
 $("pass").onclick=e=>{const k=e.target.closest("[data-k]"),r=e.target.closest("[data-r]");

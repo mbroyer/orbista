@@ -1,4 +1,4 @@
-# Playwright: Zeitrennen mit Strafzeit, Bestzeit und Freischaltung ab Level 2
+# Playwright: Zeitrennen mit Strafzeit, Bestzeit und Freischaltung mit dem ersten Visum
 import asyncio, os, re
 from playwright.async_api import async_playwright
 W = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/'
@@ -28,13 +28,13 @@ async def rennen(pg, fehler):
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path=os.environ.get('PW_CHROMIUM'))
-        # Level 1: Zeitrennen gesperrt
-        pg, errs = await neu(b)
+        # ohne Visum: Zeitrennen gesperrt, auch mit vielen XP
+        pg, errs = await neu(b, '{xp:5000}')
         assert await pg.is_disabled('[data-p="race"]'), 'Zeitrennen müsste gesperrt sein'
-        assert 'Ab Level 2' in await pg.inner_text('#paths')
+        assert 'Ab dem ersten Visum' in await pg.inner_text('#paths')
 
-        # Level 2, erstes Rennen mit 2 Fehlern: 10 s Strafzeit, erste Bestzeit, +30 XP
-        pg, errs = await neu(b, '{xp:100}')
+        # mit einem Visum, erstes Rennen mit 2 Fehlern: 10 s Strafzeit, erste Bestzeit
+        pg, errs = await neu(b, "{stamps:{'Ozeanien|f':1}}")
         await pg.click('[data-p="race"]'); assert 'Noch keine Bestzeit' in await pg.inner_text('#answerHint')
         await pg.click('#setupBack')
         txt = await rennen(pg, (2, 7)); print(txt.splitlines()[:4])
@@ -49,9 +49,9 @@ async def main():
         assert not errs, errs
 
         # Rekord schlagen und verfehlen
-        pg, errs = await neu(b, "{xp:100,best:{'f2l|Europa|10':999999}}")
-        txt = await rennen(pg, ()); assert 'Neue Bestzeit' in txt and '+30 XP' in txt, txt
-        pg, errs = await neu(b, "{xp:100,best:{'f2l|Europa|10':1}}")
+        pg, errs = await neu(b, "{best:{'f2l|Europa|10':999999}}")
+        txt = await rennen(pg, ()); assert 'Neue Bestzeit' in txt and 'XP' not in txt, txt
+        pg, errs = await neu(b, "{best:{'f2l|Europa|10':1}}")
         txt = await rennen(pg, ()); assert 'langsamer als deine Bestzeit' in txt, txt
         P = await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))")
         assert P['best']['f2l|Europa|10'] == 1, P

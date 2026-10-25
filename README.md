@@ -2,7 +2,7 @@
 
 Länder-Quiz mit 197 Ländern und ihren Hauptstädten, komplett auf Deutsch. Privates Projekt von A Simple Man's Lab. Spielkonzept 2.0 (Hauptstädte, Weltreise, Gamification): https://claude.ai/artifact/UEUFjDKwakqbrAUHwzZ6R5
 
-Themen und Spielarten: Flaggen (Flagge → Land, Land → Flagge, tippen), Hauptstädte (Land → Hauptstadt, Hauptstadt → Land, tippen), Beides (Flagge → Hauptstadt, tippen). Filter nach Weltregion, Runden mit 10, 20 oder allen Fragen. Jede Karte (Flagge, Hauptstadt) sammelt bis zu drei Sterne und kommt nach Fälligkeit wieder dran. Dazu XP, Level, Tagesziel und Serie. Der Fortschritt liegt im Browser (localStorage).
+Themen und Spielarten: Flaggen (Flagge → Land, Land → Flagge, tippen), Hauptstädte (Land → Hauptstadt, Hauptstadt → Land, tippen), Beides (Flagge → Hauptstadt, tippen). Filter nach Weltregion, Runden mit 10, 20 oder allen Fragen. Jede Karte (Flagge, Hauptstadt) sammelt bis zu drei Sterne und kommt nach Fälligkeit wieder dran. Dazu XP, Level, Tagesziel, Serie und ab Level 2 das Zeitrennen mit Bestzeiten. Der Fortschritt liegt im Browser (localStorage).
 
 ## Bauen und veröffentlichen
 
@@ -10,6 +10,7 @@ Themen und Spielarten: Flaggen (Flagge → Land, Land → Flagge, tippen), Haupt
 python3 build.py                                # schreibt orbista.html (Artifact) und web/orbista/index.html
 python3 tests/t1.py                             # Playwright bei 390 px: alle Spielarten, Hauptstädte tippen, Übernahme des Flaggo-Stands
 python3 tests/t2.py                             # Sterne, Fälligkeit, XP, Level, Tagesziel, Serie mit Ruhetag
+python3 tests/t3.py                             # Zeitrennen: Strafzeit, Bestzeit, Freischaltung
 python3 web/deploy.py ../mbroyer.github.io/orbista   # App für asimplemanslab.com/orbista
 ```
 

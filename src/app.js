@@ -85,13 +85,25 @@ const MODES={
 const CAPMODES=["l2c","c2l","ctype","f2c","fctype"], TYPEMODES=["type","ctype","fctype"];
 const kindOf=m=>CAPMODES.includes(m)?"c":"f";
 const LENGTHS=[10,20,0];
-let S={topic:"flag",mode:"f2l",region:"Alle",len:10};
+let S={topic:"flag",mode:"f2l",region:"Alle",len:10,race:false};
+
+// Zeitrennen: feste Strecke gegen die Uhr, jeder Fehler kostet 5 Sekunden, freigeschaltet ab Level 2
+const PENALTY=5000, RACE_LEVEL=2;
+const raceOpen=()=>levelOf(P.xp)>=RACE_LEVEL;
+const raceKey=()=>[S.mode,S.region,S.len].join("|");
+const fmt=ms=>{const t=Math.round(ms/100),m=Math.floor(t/600),sec=Math.floor(t/10)%60;return `${m}:${String(sec).padStart(2,"0")},${t%10}`};
+const secs=ms=>(ms/1000).toFixed(1).replace(".",",")+"\u00a0s";
 
 function renderStart(){
   $("topics").innerHTML=TOPICS.map(([id,t])=>`<button class="chip" data-t="${id}" aria-pressed="${S.topic===id}">${t}</button>`).join("");
   $("modes").innerHTML=MODES[S.topic].map(m=>`<button class="mode" data-m="${m.id}" aria-pressed="${S.mode===m.id}"><b>${m.t}</b><span>${m.d}</span></button>`).join("");
   const regs=["Alle",...Object.keys(REGIONS)];
   $("regions").innerHTML=regs.map(r=>{const n=r==="Alle"?ALL.length:REGIONS[r].split(" ").length;return `<button class="chip" data-r="${r}" aria-pressed="${S.region===r}">${r}<small>${n}</small></button>`}).join("");
+  if(!raceOpen())S.race=false;
+  $("forms").innerHTML=`<button class="chip" data-f="0" aria-pressed="${!S.race}">Übung</button><button class="chip" data-f="1" aria-pressed="${S.race}" ${raceOpen()?"":"disabled"}>Zeitrennen${raceOpen()?"":`<small>ab Level ${RACE_LEVEL}</small>`}</button>`;
+  const best=(P.best||{})[raceKey()];
+  $("raceInfo").hidden=!S.race;
+  $("raceInfo").textContent=best?`Deine Bestzeit für diese Strecke: ${fmt(best)}`:"Noch keine Bestzeit für diese Strecke. Jeder Fehler kostet 5 Sekunden.";
   $("lengths").innerHTML=LENGTHS.map(l=>`<button class="chip" data-l="${l}" aria-pressed="${S.len===l}">${l?l+" Fragen":"Alle"}</button>`).join("");
   const kind=kindOf(S.mode), pool=poolOf(S.region), k=pool.filter(c=>known(kind,c)).length;
   const st=pool.reduce((a,c)=>a+stars(kind,c),0), due=pool.filter(c=>{const m=card(kind,c);return m&&m.due<=today()&&m.s<3}).length;
@@ -105,6 +117,7 @@ const poolOf=r=>r==="Alle"?ALL:REGIONS[r].split(" ");
 $("topics").onclick=e=>{const b=e.target.closest("[data-t]");if(b&&S.topic!==b.dataset.t){S.topic=b.dataset.t;S.mode=MODES[S.topic][0].id;renderStart()}};
 $("modes").onclick=e=>{const b=e.target.closest("[data-m]");if(b){S.mode=b.dataset.m;renderStart()}};
 $("regions").onclick=e=>{const b=e.target.closest("[data-r]");if(b){S.region=b.dataset.r;renderStart()}};
+$("forms").onclick=e=>{const b=e.target.closest("[data-f]");if(b&&!b.disabled){S.race=b.dataset.f==="1";renderStart()}};
 $("lengths").onclick=e=>{const b=e.target.closest("[data-l]");if(b){S.len=+b.dataset.l;renderStart()}};
 
 function renderStatus(){
@@ -127,21 +140,30 @@ function pickQuestions(pool,n,onlyList){
 }
 function start(onlyList){
   const pool=poolOf(S.region);
-  G={topic:S.topic,pool,list:pickQuestions(pool,S.len,onlyList),i:0,right:0,streak:0,best:0,missed:[],locked:false,mode:S.mode,kind:kindOf(S.mode),hint:0,
+  clearInterval(G&&G.clock);
+  G={race:S.race&&!onlyList,key:raceKey(),times:[],penalty:0,topic:S.topic,pool,list:pickQuestions(pool,S.len,onlyList),i:0,right:0,streak:0,best:0,missed:[],locked:false,mode:S.mode,kind:kindOf(S.mode),hint:0,
      xp:0,level:levelOf(P.xp),newStars:0,mastered:0,goal:false};
-  $("start").hidden=true;$("status").hidden=true;$("madeby").hidden=true;$("result").hidden=true;$("game").hidden=false;next();
+  $("start").hidden=true;$("status").hidden=true;$("madeby").hidden=true;$("result").hidden=true;$("game").hidden=false;
+  if(G.race)G.clock=setInterval(hud,100);
+  next();
 }
 function distractors(code){
   const c=shuffle(G.pool.filter(x=>x!==code));
   const base=c.length>=3?c:shuffle(ALL.filter(x=>x!==code));
   return base.sort((x,y)=>(C[x].region===C[code].region?0:1)-(C[y].region===C[code].region?0:1)).slice(0,3);
 }
+// Rennzeit = Summe der Antwortzeiten plus Strafzeit; die Anzeige der Lösung zwischen den Fragen zählt nicht
+const raceMs=()=>G.times.reduce((a,t)=>a+t[1],0)+G.penalty+(G.locked?0:performance.now()-G.qStart);
+function hud(){
+  if(!G)return;
+  $("hudScore").textContent=G.race?`${fmt(raceMs())} · ${Math.min(G.i+1,G.list.length)}/${G.list.length}`:`${G.right} ✓ · ${G.i+1}/${G.list.length}`;
+}
 function next(){
   clearTimeout(G.timer);
   if(G.i>=G.list.length) return finish();
   const code=G.list[G.i];G.locked=false;G.hint=0;
   $("prog").style.width=(100*G.i/G.list.length)+"%";
-  $("hudScore").textContent=`${G.right} ✓ · ${G.i+1}/${G.list.length}`;
+  G.qStart=performance.now();hud();
   const q=$("q");
   const o=()=>shuffle([code,...distractors(code)]);
   const fb=`<div class="fb" id="fb" aria-live="polite"></div>`;
@@ -160,7 +182,9 @@ function next(){
   if(TYPEMODES.includes(m)) setTimeout(()=>{const t=$("ti");t&&t.focus()},50);
 }
 function answer(ok,code,picked){
-  if(G.locked)return;G.locked=true;
+  if(G.locked)return;
+  if(G.race){G.times.push([code,performance.now()-G.qStart,ok]);if(!ok)G.penalty+=PENALTY}
+  G.locked=true;
   const typed=TYPEMODES.includes(G.mode), gain=record(G.kind,code,ok,typed&&!G.hint), s=stars(G.kind,code);
   const fb=$("fb");
   let xp=0;
@@ -170,12 +194,18 @@ function answer(ok,code,picked){
     if(gain>0){xp+=20;G.newStars++;if(s===3){xp+=50;G.mastered++}}
     G.xp+=xp;if(addXp(xp))G.goal=true;
   }else{G.streak=0;G.missed.push(code)}
-  $("hudScore").textContent=`${G.right} ✓ · ${G.i+1}/${G.list.length}`;
+  hud();
   document.querySelectorAll(".opt").forEach(b=>{b.disabled=true;if(b.dataset.c===code)b.classList.add("ok");else if(b.dataset.c===picked)b.classList.add("bad")});
   const ti=$("ti");if(ti)ti.disabled=true;
   const stk=G.streak>=3?` · ${G.streak} in Folge`:"";
   fb.className="fb "+(ok?"ok":"bad");
   const x=C[code], want=G.kind==="c"?x.cap:x.name, note=G.kind==="c"&&CAP_NOTE[code];
+  if(G.race){ // im Rennen sofort weiter, bei Fehlern kurz die Lösung zeigen
+    fb.innerHTML=`<b>${ok?"Richtig!":"Das war "+want}</b>${ok?"":`<span>+5 Sekunden</span>`}`;
+    if(!ok)$("q").classList.add("shake");
+    G.timer=setTimeout(()=>{$("q").classList.remove("shake");G.i++;next()},ok?250:1200);
+    return;
+  }
   fb.innerHTML=`<b>${ok?"Richtig! +"+xp+" XP":"Das war "+want}</b><span>${x.name} · ${x.cap} · ${x.region}${ok?stk:""}</span><span class="stars${gain>0?" up":""}" aria-label="${s} von 3 Sternen">${starStr(s)}</span>${note?`<span class="note">${note}</span>`:""}`;
   if(!ok) $("q").classList.add("shake");
   const last=G.i+1>=G.list.length;
@@ -192,16 +222,28 @@ $("q").addEventListener("click",e=>{
     $("fb").className="fb";$("fb").innerHTML=`<b>${n.slice(0,G.hint)}${"·".repeat(Math.max(0,n.length-G.hint))}</b><span>${n.length} Buchstaben · ${C[code].region}</span>`;}
 });
 $("q").addEventListener("submit",e=>{e.preventDefault();if(G.locked)return;const code=G.list[G.i];const v=$("ti").value;if(!v.trim())return;answer(matches(code,v,G.kind==="c"),code,null)});
-$("quit").onclick=()=>{clearTimeout(G&&G.timer);G=null;$("game").hidden=true;$("result").hidden=true;$("start").hidden=false;$("status").hidden=false;$("madeby").hidden=false;renderStart()};
+$("quit").onclick=()=>{clearTimeout(G&&G.timer);clearInterval(G&&G.clock);G=null;$("game").hidden=true;$("result").hidden=true;$("start").hidden=false;$("status").hidden=false;$("madeby").hidden=false;renderStart()};
+function raceResult(){
+  const total=raceMs(),old=(P.best||{})[G.key],rec=!old||total<old;
+  if(rec){P.best=P.best||{};P.best[G.key]=Math.round(total);saveProfile();G.xp+=30;if(addXp(30))G.goal=true}
+  const by=[...G.times].sort((a,b)=>a[1]-b[1]),lbl=c=>G.kind==="c"?C[c].cap:C[c].name;
+  const cmp=!old?"Erste Bestzeit für diese Strecke":rec?`Neue Bestzeit, ${secs(old-total)} schneller als dein Rekord`:`${secs(total-old)} langsamer als deine Bestzeit (${fmt(old)})`;
+  return `<div class="label">Zeitrennen</div><div class="score">${fmt(total)}</div>
+  <p class="sub">${G.right} von ${G.list.length} richtig${G.penalty?` · ${G.penalty/1000} s Strafzeit`:""} · Schnitt ${secs(total/G.list.length)} pro Frage</p>
+  <div class="${rec?"levelup":"gain"}">${cmp}${rec?" · +30 XP":""}</div>
+  <div class="times"><div><small>Schnellste Antwort</small><b>${secs(by[0][1])}</b><span>${lbl(by[0][0])}</span></div><div><small>Langsamste Antwort</small><b>${secs(by[by.length-1][1])}</b><span>${lbl(by[by.length-1][0])}</span></div></div>`;
+}
 function finish(){
+  clearInterval(G.clock);
   $("game").hidden=true;$("result").hidden=false;
+  const race=G.race?raceResult():"";
   const n=G.list.length,p=Math.round(100*G.right/n);
   const msg=p===100?"Perfekt, kein einziger Fehler.":p>=80?"Stark!":p>=50?"Gut gemacht, da geht noch mehr.":"Weiter üben, es lohnt sich.";
   if(p===100&&n>=10){G.xp+=30;if(addXp(30))G.goal=true}
   const L=levelOf(P.xp),a=xpFor(L),b=xpFor(L+1);
   const extra=[G.newStars?`${G.newStars} neue${G.newStars===1?"r":""} Stern${G.newStars===1?"":"e"}`:"",G.mastered?`${G.mastered} gemeistert`:"",p===100&&n>=10?"Bonus für die perfekte Runde":""].filter(Boolean).join(" · ");
   const miss=[...new Set(G.missed)];
-  $("result").innerHTML=`<div class="label">Ergebnis</div><div class="score">${G.right} / ${n}</div><p class="sub">${msg} Beste Serie: ${G.best}.</p>
+  $("result").innerHTML=`${race||`<div class="label">Ergebnis</div><div class="score">${G.right} / ${n}</div><p class="sub">${msg} Beste Serie: ${G.best}.</p>`}
   <div class="gain"><b>+${G.xp} XP</b>${extra?`<span>${extra}</span>`:""}</div>
   ${L>G.level?`<div class="levelup">Level ${L} erreicht: ${titleOf(L)}</div>`:""}
   ${G.goal?`<div class="levelup">Tagesziel geschafft · ${streakNow()} ${streakNow()===1?"Tag":"Tage"} Serie</div>`:""}

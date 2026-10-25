@@ -1,12 +1,12 @@
 (function(){
-const {REGIONS,NAME_FIX,ALIAS}=window.FLAGGO_DATA;
+const {REGIONS,NAME_FIX,ALIAS}=window.ORBISTA_DATA;
 let dn; try{dn=new Intl.DisplayNames(["de"],{type:"region"})}catch(e){dn=null}
 const C={}; // code -> {code,name,region}
 for(const [reg,list] of Object.entries(REGIONS)) for(const code of list.split(" ")){
   let n=NAME_FIX[code]; if(!n){try{n=dn&&dn.of(code)}catch(e){} } C[code]={code,name:n||code,region:reg};
 }
 const ALL=Object.keys(C);
-const flag=c=>"flags/"+c+".svg";
+const flag=c=>window.ORBISTA_FLAGS[c];
 const $=id=>document.getElementById(id);
 const norm=s=>s.toLowerCase().replace(/ß/g,"ss").replace(/ä/g,"a").replace(/ö/g,"o").replace(/ü/g,"u").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/ae|oe|ue/g,m=>m[0]).replace(/[^a-z]/g,"");
 function lev(a,b){const m=a.length,n=b.length;let p=Array.from({length:n+1},(_,i)=>i);for(let i=1;i<=m;i++){let c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
@@ -15,9 +15,11 @@ function matches(code,input){const g=norm(input);if(!g)return false;const cands=
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
 // Fortschritt (nur lokal im Browser, optional)
+// Schlüssel nie umbenennen; alter Stand aus Flaggo wird beim ersten Start übernommen
+const KEY="orbista.mastery";
 let mastery={};
-try{mastery=JSON.parse(localStorage.getItem("flaggo.mastery")||"{}")}catch(e){}
-function saveMastery(){try{localStorage.setItem("flaggo.mastery",JSON.stringify(mastery))}catch(e){}}
+try{mastery=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem("flaggo.mastery")||"{}")}catch(e){}
+function saveMastery(){try{localStorage.setItem(KEY,JSON.stringify(mastery))}catch(e){}}
 const known=c=>{const m=mastery[c];return m&&m.r>=2&&m.r>m.w};
 function record(c,ok){const m=mastery[c]||(mastery[c]={r:0,w:0});ok?m.r++:m.w++;saveMastery()}
 

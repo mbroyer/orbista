@@ -1,32 +1,26 @@
-# Flaggo
+# Orbista (bisher Flaggo)
 
-Flaggen-Quiz mit 197 Ländern, komplett auf Deutsch. Privates Projekt von A Simple Man's Lab.
+Länder-Quiz mit 197 Ländern, komplett auf Deutsch. Privates Projekt von A Simple Man's Lab. Spielkonzept 2.0 (Hauptstädte, Weltreise, Gamification): https://claude.ai/artifact/UEUFjDKwakqbrAUHwzZ6R5
 
-Spielarten: Flagge → Land, Land → Flagge, selbst tippen. Filter nach Weltregion, Runden mit 10, 20 oder allen Flaggen. Schwächere Flaggen kommen häufiger dran, der Fortschritt liegt aktuell nur im Browser (localStorage).
+Spielarten heute: Flagge → Land, Land → Flagge, selbst tippen. Filter nach Weltregion, Runden mit 10, 20 oder allen Flaggen. Schwächere Flaggen kommen häufiger dran, der Fortschritt liegt im Browser (localStorage).
 
-## Lokal starten
-
-Reine statische Seite, kein Build nötig:
+## Bauen und veröffentlichen
 
 ```
-python3 -m http.server 8080
+python3 build.py                                # schreibt orbista.html (Artifact) und web/orbista/index.html
+python3 tests/t1.py                             # Playwright bei 390 px: alle Spielarten, Übernahme des Flaggo-Stands
+python3 web/deploy.py ../mbroyer.github.io/orbista   # App für asimplemanslab.com/orbista
 ```
 
-Dann http://localhost:8080 öffnen.
+Findet Playwright den Browser nicht, den Pfad zu Chromium in `PW_CHROMIUM` setzen.
 
-## Struktur
-
-```
-index.html          Seitenstruktur (Start, Spiel, Ergebnis)
-css/style.css       Design (hell und dunkel über Tokens am Dateianfang)
-js/data.js          Länder nach Region, deutsche Namen, Schreibweisen fürs Tippen
-js/app.js           Spiellogik, Fortschritt, Ansichten
-flags/              197 SVG-Flaggen (Quelle: npm-Paket country-flag-icons)
-assets/             Logo A Simple Man's Lab
-supabase/schema.sql Entwurf für Konten und Fortschritt (noch nicht eingebunden)
-CLAUDE.md           Kontext und Roadmap für Claude Code
-```
-
-## Veröffentlichen
-
-Der Ordner ist direkt hostbar, zum Beispiel bei IONOS (Dateien per FTP in ein Unterverzeichnis), Cloudflare Pages oder Netlify (Ordner hochladen, kein Build-Befehl).
+## Dateien
+- `build.py` – baut aus `src/`, `flags/` und `assets/` eine einzige HTML-Datei (Flaggen und Logo eingebettet)
+- `src/body.html` – Seitenaufbau (Start, Spiel, Ergebnis)
+- `src/style.css` – Design, hell und dunkel über Tokens am Dateianfang
+- `src/data.js` – Länder nach Region, deutsche Namen, Schreibweisen fürs Tippen
+- `src/app.js` – Spiellogik, Fortschritt, Ansichten
+- `flags/` – 197 SVG-Flaggen (Quelle: npm-Paket country-flag-icons)
+- `assets/` – Logo A Simple Man's Lab
+- `web/deploy.py` – legt die gebaute App ins Repo `mbroyer/mbroyer.github.io`, Ordner `orbista/`
+- `tests/` – Playwright-Skripte (Viewport 390 px)

@@ -8,7 +8,7 @@
   --sea:#d3e2e6; --sea-line:#b9cfd6; --grid:#c3d4da; --land:#efe5cf; --land-off:#e2dccf; --border:#8a7556;
   --logo-filter:none; --cta:#e58a33; --cta-ink:#1d2b3a; color-scheme:light; --f-display:"Young Serif",Georgia,serif; --f-body:"IBM Plex Sans",system-ui,sans-serif;
 }
-/* Standard ist hell (auch bei System-Dunkelmodus); Dunkel nur über den Umschalter (data-theme, gemerkt in orbista.theme) */
+/* Standard ist dunkel (unabhängig vom System, gesetzt per data-theme in body.html); Hell über den Umschalter (data-theme, gemerkt in orbista.theme) */
 :root[data-theme="dark"]{
   --bg:#111a24; --card:#18232f; --ink:#ede6d6; --muted:#a2a9b0; --line:#2c3a48; --line2:#3b4b5b;
   --accent:#7fb7d6; --accent-ink:#0e1a24; --gold:#e0a458; --track:#2c3a48; --sel:#22303e;

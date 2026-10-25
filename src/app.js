@@ -220,7 +220,7 @@ const sndBtn=()=>`<button class="iconbtn sndbtn"></button>`;
 function renderSound(){const on=soundOn();document.querySelectorAll(".sndbtn").forEach(b=>{b.setAttribute("aria-pressed",String(on));b.setAttribute("aria-label",on?"Klänge ausschalten":"Klänge einschalten");
   b.innerHTML=svg(SPK+(on?'<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>':'<path d="M16 9l5 6M21 9l-5 6"/>'),"")})}
 document.addEventListener("click",e=>{if(e.target.closest(".sndbtn")){P.sound=!soundOn();saveProfile();renderSound();play("tap")}});
-// Hell/Dunkel-Umschalter auf jeder Seite neben dem Lautsprecher (im Erststart allein): Standard hell, nur auf diesem Gerät gemerkt (orbista.theme, nicht im Reise-Code)
+// Hell/Dunkel-Umschalter auf jeder Seite neben dem Lautsprecher (im Erststart allein): Standard dunkel, nur auf diesem Gerät gemerkt (orbista.theme, nicht im Reise-Code)
 const themeBtn=()=>`<button class="iconbtn themebtn"></button>`;
 const isDark=()=>document.documentElement.dataset.theme==="dark";
 function renderTheme(){const d=isDark();document.querySelectorAll(".themebtn").forEach(b=>{b.setAttribute("aria-pressed",String(d));b.setAttribute("aria-label",d?"Hellen Modus einschalten":"Dunklen Modus einschalten");

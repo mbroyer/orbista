@@ -40,7 +40,7 @@ button:disabled{opacity:.5;cursor:wait}
 .madeby img{width:58px;height:auto;display:block;filter:var(--logo-filter)}
 .madeby span{font-size:8px;line-height:1;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink)}
 </style>
-<script>try{if(localStorage.getItem("orbista.theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("orbista.theme")==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 </head>
 <body>
 <form class="card" id="f" hidden>

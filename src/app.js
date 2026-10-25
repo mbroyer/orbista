@@ -240,12 +240,14 @@ function finish(){
   const n=G.list.length,p=Math.round(100*G.right/n);
   const msg=p===100?"Perfekt, kein einziger Fehler.":p>=80?"Stark!":p>=50?"Gut gemacht, da geht noch mehr.":"Weiter üben, es lohnt sich.";
   if(p===100&&n>=10){G.xp+=30;if(addXp(30))G.goal=true}
+  const st=newStamps();st.forEach(()=>{G.xp+=STAMP_XP;if(addXp(STAMP_XP))G.goal=true});
   const L=levelOf(P.xp),a=xpFor(L),b=xpFor(L+1);
   const extra=[G.newStars?`${G.newStars} neue${G.newStars===1?"r":""} Stern${G.newStars===1?"":"e"}`:"",G.mastered?`${G.mastered} gemeistert`:"",p===100&&n>=10?"Bonus für die perfekte Runde":""].filter(Boolean).join(" · ");
   const miss=[...new Set(G.missed)];
   $("result").innerHTML=`${race||`<div class="label">Ergebnis</div><div class="score">${G.right} / ${n}</div><p class="sub">${msg} Beste Serie: ${G.best}.</p>`}
   <div class="gain"><b>+${G.xp} XP</b>${extra?`<span>${extra}</span>`:""}</div>
   ${L>G.level?`<div class="levelup">Level ${L} erreicht: ${titleOf(L)}</div>`:""}
+  ${st.map(([r,k])=>`<div class="levelup stamp-new">Neuer Stempel im Reisepass: ${r} · ${KIND[k]} · +${STAMP_XP} XP</div>`).join("")}
   ${G.goal?`<div class="levelup">Tagesziel geschafft · ${streakNow()} ${streakNow()===1?"Tag":"Tage"} Serie</div>`:""}
   <div class="mastery"><div class="label">Level ${L} · ${P.xp-a} / ${b-a} XP</div><div class="bar xp"><div style="width:${100*(P.xp-a)/(b-a)}%"></div></div>
   <div class="label">Tagesziel · ${dayXp()} / ${P.goal} XP</div><div class="bar"><div style="width:${Math.min(100,100*dayXp()/P.goal)}%"></div></div></div>
@@ -257,5 +259,41 @@ function finish(){
   $("home").onclick=()=>$("quit").onclick();
 }
 $("go").onclick=()=>start();
+
+// Reisepass: alle Länder nach Region mit Sternen, Stempel pro Region und Karte, Bestzeiten
+const KIND={f:"Flaggen",c:"Hauptstädte"}, STAMP_XP=100;
+const stampDone=(r,k)=>REGIONS[r].split(" ").every(c=>known(k,c));
+// Stempel gibt es, sobald alle Karten einer Region gekonnt sind (2 Sterne); vergeben wird einmal, am Ende einer Runde
+function newStamps(){
+  P.stamps=P.stamps||{};const out=[];
+  for(const r of Object.keys(REGIONS))for(const k of ["f","c"])
+    if(!P.stamps[r+"|"+k]&&stampDone(r,k)){P.stamps[r+"|"+k]=today();out.push([r,k])}
+  if(out.length)saveProfile();
+  return out;
+}
+let passKind="f";
+function renderPass(){
+  const tot=k=>ALL.reduce((a,c)=>a+stars(k,c),0), stamps=P.stamps||{};
+  const modeName=Object.fromEntries(Object.values(MODES).flat().map(m=>[m.id,m.t]));
+  const best=Object.entries(P.best||{}).sort((a,b)=>a[0]<b[0]?-1:1);
+  $("pass").innerHTML=`<div class="hud"><button class="quit" id="passBack" aria-label="Zurück">✕</button><h2>Reisepass</h2></div>
+  <div class="passsum"><div><b>★ ${tot("f")}</b><small>von ${3*ALL.length} Flaggen-Sternen</small></div><div><b>★ ${tot("c")}</b><small>von ${3*ALL.length} Hauptstadt-Sternen</small></div><div><b>${Object.keys(stamps).length}</b><small>von ${2*Object.keys(REGIONS).length} Stempeln</small></div></div>
+  <div class="label">Stempel</div>
+  <div class="stamps">${Object.keys(REGIONS).map(r=>["f","c"].map(k=>{const on=stamps[r+"|"+k];
+    return `<div class="stamp${on?" on":""} ${k}" data-stamp="${r}|${k}" aria-label="${r}, ${KIND[k]}${on?", erreicht":", noch offen"}"><b>${r}</b><small>${KIND[k]}</small></div>`}).join("")).join("")}</div>
+  <p class="muted race">Einen Stempel gibt es, wenn alle Flaggen oder alle Hauptstädte einer Region zwei Sterne haben. Er bringt ${STAMP_XP} XP.</p>
+  <div class="chips" id="passKinds">${["f","c"].map(k=>`<button class="chip" data-k="${k}" aria-pressed="${passKind===k}">${KIND[k]}</button>`).join("")}</div>
+  ${Object.keys(REGIONS).map(r=>{const list=REGIONS[r].split(" ").sort((a,b)=>C[a].name.localeCompare(C[b].name,"de"));
+    const got=list.reduce((a,c)=>a+stars(passKind,c),0);
+    return `<div class="label">${r} · ★ ${got} von ${3*list.length}</div><div class="tiles">${list.map(c=>{const n=stars(passKind,c);
+      return `<div class="tile${n?"":" grey"}" data-c="${c}"><img src="${flag(c)}" alt=""><b>${C[c].name}</b>${passKind==="c"?`<span>${n?C[c].cap:"?"}</span>`:""}<i aria-label="${n} von 3 Sternen">${starStr(n)}</i></div>`}).join("")}</div>`}).join("")}
+  <div class="label">Bestzeiten im Zeitrennen</div>
+  ${best.length?`<div class="besttimes">${best.map(([key,ms])=>{const [m,r,l]=key.split("|");return `<div><span>${modeName[m]||m} · ${r} · ${+l?l+" Fragen":"alle"}</span><b>${fmt(ms)}</b></div>`}).join("")}</div>`:`<p class="muted race">Noch keine Bestzeiten. Das Zeitrennen gibt es ab Level ${RACE_LEVEL}.</p>`}`;
+}
+$("passBtn").onclick=()=>{$("start").hidden=true;$("status").hidden=true;$("madeby").hidden=true;$("pass").hidden=false;renderPass();scrollTo(0,0)};
+$("pass").onclick=e=>{
+  const k=e.target.closest("[data-k]");if(k){passKind=k.dataset.k;renderPass();return}
+  if(e.target.closest("#passBack")){$("pass").hidden=true;$("start").hidden=false;$("status").hidden=false;$("madeby").hidden=false;renderStart()}
+};
 renderStart();
 })();

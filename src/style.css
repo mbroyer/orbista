@@ -44,9 +44,8 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .globe .dot{fill:var(--gold);stroke:none}
 .globe.big{width:56px;height:56px;stroke-width:1.2;margin-top:20px}
 .topr{display:flex;align-items:center;gap:4px}
-.pill{font-size:.8rem;font-weight:600;border:1px solid var(--ink);border-radius:999px;padding:5px 12px;white-space:nowrap}
 
-/* Heute: Tagesziel, Serie, Level und der Hauptknopf */
+/* Heute: Tagesziel, Serie und der Hauptknopf */
 .todayrow{display:flex;align-items:center;gap:16px}
 .goal{border:0;background:transparent;padding:0;position:relative;width:68px;height:68px;flex:none}
 .goal svg{width:68px;height:68px;transform:rotate(-90deg)}
@@ -120,7 +119,6 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .hud{display:flex;align-items:center;gap:12px;margin-left:-10px}
 .bar{height:6px;border-radius:3px;background:var(--track);overflow:hidden}
 .bar>div{height:100%;background:var(--accent);width:0;transition:width .3s}
-.bar.xp>div{background:var(--gold)}
 .hud .bar{flex:1}
 .hud .stat{font-variant-numeric:tabular-nums;font-weight:600;font-size:.9rem;white-space:nowrap}
 .q{display:flex;flex-direction:column;align-items:stretch;gap:18px}
@@ -183,7 +181,7 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .cover small{font-size:.62rem;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:var(--pass-gold)}
 .cover h2{font-size:1.45rem;line-height:1.1}
 .cover span{font-size:.8rem;opacity:.8}
-.coverstats{display:none}
+.cover>.coverstats{display:none}
 .albumbar{display:flex;flex-direction:column;gap:12px}
 .visa{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:12px;
   background-image:repeating-linear-gradient(135deg,transparent 0 9px,var(--guilloche) 9px 10px)}
@@ -312,4 +310,3 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
   .album{grid-template-columns:repeat(6,minmax(0,1fr));gap:22px 16px;padding:22px 20px}
 }
 
-@media (max-width:420px){.pill .pt{display:none}}

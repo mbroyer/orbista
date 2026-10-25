@@ -1,4 +1,4 @@
-# Playwright: Sterne, Fälligkeit, XP, Level, Tagesziel und Serie mit Ruhetag
+# Playwright: Sterne, Fälligkeit, XP (unsichtbar), Tagesziel und Serie mit Ruhetag
 import asyncio, os, json
 from playwright.async_api import async_playwright
 W = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/'
@@ -30,16 +30,16 @@ async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path=os.environ.get('PW_CHROMIUM'))
         T = None
-        # 1. Neue Runde, 10 richtig: 10 Grund + 70 Serienbonus + 200 neue Sterne + 30 perfekte Runde = 400 XP, Level 3
+        # 1. Neue Runde, 10 richtig: 10 Grund + 70 Serienbonus + 200 neue Sterne + 30 perfekte Runde = 400 XP, nirgends angezeigt
         pg, errs = await neu(b)
         T = await pg.evaluate(TODAY)
         sub = await pg.inner_text('#goSub'); assert sub == '10 Fragen · Europa', sub
         await pg.click('#go'); await richtig(pg, 10)
         P = await get(pg, 'orbista.profile'); print('XP', P['xp'], 'Serie', P['streak'])
         assert P['xp'] == 400 and P['streak'] == 1 and P['goalDay'] == T, P
-        txt = await pg.inner_text('#result'); assert '+400 XP' in txt and 'Level 3 erreicht' in txt and 'Tagesziel geschafft' in txt, txt
+        txt = await pg.inner_text('#result'); assert 'XP' not in txt and 'Level' not in txt and 'Tagesziel geschafft' in txt and '10 neue Sterne' in txt, txt
         M = await get(pg, 'orbista.mastery'); assert len(M) == 10 and all(m['s'] == 1 and m['due'] == T + 1 for m in M.values()), M
-        await pg.click('#homeBtn'); assert (await pg.text_content('#lvlPill')) == 'Level 3 · Tourist'
+        await pg.click('#homeBtn'); home = await pg.inner_text('#home'); assert 'Level' not in home and 'XP' not in home and '0 von 12 Visa' in home, home
         await pg.screenshot(path=W + 't2_start.png', full_page=True)
         assert not errs, errs
 

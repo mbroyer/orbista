@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Flaggo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+  <div class="brand"><div class="pennant" aria-hidden="true"><i></i><i></i></div><div><h1>Flaggo</h1><p class="sub">Flaggen der Welt raten</p></div></div>
+
+  <section id="start" class="panel">
+    <div class="label">Spielart</div>
+    <div class="modes" id="modes"></div>
+    <div class="label">Weltregion</div>
+    <div class="chips" id="regions"></div>
+    <div class="label">Runde</div>
+    <div class="chips" id="lengths"></div>
+    <div class="mastery"><div class="label" id="mastLabel"></div><div class="bar"><div id="mastBar"></div></div></div>
+    <button class="btn" id="go">Los geht’s</button>
+  </section>
+
+  <section id="game" class="panel" hidden>
+    <div class="hud"><button class="quit" id="quit" aria-label="Runde beenden">✕</button><div class="bar"><div id="prog"></div></div><div class="stat" id="hudScore"></div></div>
+    <div class="q" id="q"></div>
+  </section>
+
+  <section id="result" class="panel" hidden></section>
+
+  <div class="madeby" id="madeby"><span>Made with love by</span><img alt="A Simple Man's Lab" src="assets/logo-simple-mans-lab.png"></div>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

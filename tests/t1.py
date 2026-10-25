@@ -1,29 +1,38 @@
-# Playwright bei 390 px: alle Spielarten aller Themen einmal durchspielen, Hauptstädte richtig tippen, Übernahme des Flaggo-Stands, kein Querscrollen
+# Playwright bei 390 px: erster Start, Weiterreisen, gezieltes Üben mit Auswählen und Eintippen, Übernahme des Flaggo-Stands, kein Querscrollen
 import asyncio, os, json
 from playwright.async_api import async_playwright
 W = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/'
 
-# Kürzel der gezeigten Flagge, daraus die Hauptstadt (klein und ohne Akzente getippt, prüft die Schreibweisen-Toleranz)
-CAP_JS = """() => { const src = document.querySelector('#q img.flag').src;
-  const code = Object.keys(ORBISTA_FLAGS).find(k => ORBISTA_FLAGS[k] === src);
-  return ORBISTA_DATA.CAPITAL[code].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }"""
+# richtige Antwort zur aktuellen Frage (Kürzel und Spielart stehen an #q)
+ANSWER = """() => { const q = document.getElementById('q'), c = q.dataset.code, m = q.dataset.mode, D = ORBISTA_DATA;
+  if (['type', 'ctype', 'fctype'].includes(m)) return {m, v: m === 'type' ? (D.NAME_FIX[c] || new Intl.DisplayNames(['de'], {type: 'region'}).of(c))
+    : D.CAPITAL[c].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')};
+  return {m, c}; }"""
 
-async def runde(pg, topic, mode, richtig=False):
-    await pg.click('[data-t="%s"]' % topic)
-    await pg.click('[data-m="%s"]' % mode)
-    await pg.click('[data-r="Europa"]'); await pg.click('[data-l="10"]'); await pg.click('#go')
+async def antwort(pg, ok=True):
+    a = await pg.evaluate(ANSWER)
+    if 'v' in a:
+        if ok: await pg.fill('#ti', a['v']); await pg.click('#tf button[type=submit]')
+        else: await pg.click('#skip')
+    elif ok: await pg.click('.opt[data-c="%s"]' % a['c'])
+    else: await pg.click('.opt:not(.ok):not([data-c="%s"]) >> nth=0' % a['c'])
+    return a['m']
+
+async def runde(pg, ok=True):
+    modes = set()
     for i in range(10):
-        if richtig:
-            await pg.fill('#ti', await pg.evaluate(CAP_JS)); await pg.click('#tf button[type=submit]')
-        elif mode.endswith('type'):
-            await pg.fill('#ti', 'Deutschland'); await pg.click('#tf button[type=submit]')
-        else:
-            await pg.click('.opt >> nth=0')
-        await pg.click('#nx')
-    assert await pg.is_visible('#result'), mode
-    score = await pg.inner_text('#result .score'); print(topic, mode, score)
-    if richtig: assert score == '10 / 10', score
-    await pg.click('#home')
+        modes.add(await antwort(pg, ok)); await pg.click('#nx')
+    assert await pg.is_visible('#result')
+    return modes, await pg.inner_text('#result .score')
+
+async def gezielt(pg, path, typing, ok):
+    await pg.click('[data-p="%s"]' % path); await pg.click('#regions [data-r="Europa"]')
+    await pg.click('#answers [data-a="%d"]' % typing); await pg.click('#setupGo')
+    modes, score = await runde(pg, ok); print(path, typing, sorted(modes), score)
+    want = {('f', 0): {'f2l', 'l2f'}, ('f', 1): {'type'}, ('c', 0): {'l2c', 'c2l'}, ('c', 1): {'ctype'}}[(path, typing)]
+    assert modes <= want, modes
+    if ok: assert score == '10 / 10', score
+    await pg.click('#homeBtn')
 
 async def main():
     async with async_playwright() as p:
@@ -35,21 +44,36 @@ async def main():
         await pg.add_init_script("if(!localStorage.getItem('orbista.mastery'))localStorage.setItem('flaggo.mastery',%s)"
                                  % json.dumps(json.dumps({'DE': {'r': 3, 'w': 0}, 'FR': {'r': 2, 'w': 1}})))
         await pg.goto('file://' + W + 'orbista.html'); await pg.wait_for_timeout(300)
-        lab = await pg.text_content('#mastLabel'); print(lab)
-        assert lab.startswith('Sicher gekonnt: 2 von'), lab
+        # erster Start: Willkommen, ohne Leiste unten
+        assert await pg.is_visible('#welcome') and await pg.is_hidden('#home') and await pg.is_hidden('#tabs')
+        await pg.screenshot(path=W + 't1_willkommen.png')
+        await pg.click('#wTopics [data-t="both"]'); await pg.click('#wGoals [data-g="100"]'); await pg.click('#begin')
+        P = await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))"); assert P['topic'] == 'both' and P['goal'] == 100, P
+        paths = await pg.inner_text('#paths'); print(paths.splitlines()[:2])
+        assert '2 von 197 gekonnt' in paths, paths
+        assert await pg.is_visible('#madeby') and await pg.is_visible('#tabs')
         assert await pg.evaluate('document.documentElement.scrollWidth<=innerWidth'), 'Querscrollen'
         assert await pg.evaluate("[...document.images].every(i=>i.complete&&i.naturalWidth>0)"), 'Bild fehlt'
         await pg.screenshot(path=W + 't1_start.png', full_page=True)
-        for t, m in (('flag', 'f2l'), ('flag', 'l2f'), ('flag', 'type'), ('cap', 'l2c'), ('cap', 'c2l'),
-                     ('cap', 'ctype'), ('both', 'f2c'), ('both', 'fctype')):
-            await runde(pg, t, m)
-        await runde(pg, 'cap', 'ctype', richtig=True)
-        await runde(pg, 'both', 'fctype', richtig=True)
+
+        # Weiterreisen bei „Beides“: neue Karten aus Europa, gemischt aus Flaggen- und Hauptstadtfragen
+        sub = await pg.inner_text('#goSub'); assert 'Europa' in sub, sub
+        await pg.click('#go'); assert await pg.is_hidden('#madeby') and await pg.is_hidden('#tabs')
+        modes, score = await runde(pg); print('weiter', sorted(modes), score)
+        assert score == '10 / 10', score  # DE und FR haben 2 Sterne, dort wird getippt
+        await pg.click('#homeBtn')
+
+        for path in ('f', 'c'):
+            for typing in (0, 1):
+                await gezielt(pg, path, typing, ok=False)
+        await gezielt(pg, 'c', 1, ok=True)
         caps = await pg.evaluate("JSON.parse(localStorage.getItem('orbista.capitals'))")
-        assert sum(v['r'] for v in caps.values()) >= 20, caps
-        await pg.click('[data-t="cap"]')
-        assert (await pg.text_content('#mastTitle')) == 'Hauptstädte'
-        await pg.click('[data-t="flag"]')
+        assert sum(v['r'] for v in caps.values()) >= 10, caps
+
+        # Thema ändern führt zurück zum ersten Schritt
+        await pg.click('#changeTopic'); assert await pg.is_visible('#welcome')
+        await pg.click('#wTopics [data-t="cap"]'); await pg.click('#begin')
+        assert 'Hauptstädte' in await pg.inner_text('#topicLine')
         await pg.screenshot(path=W + 't1_ende.png', full_page=True)
         assert await pg.evaluate("!!localStorage.getItem('orbista.mastery')")
         assert not errs, errs

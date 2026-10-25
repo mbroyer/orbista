@@ -2,19 +2,19 @@
 import asyncio, os, re
 from playwright.async_api import async_playwright
 W = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/'
-CODE = """() => { const src = document.querySelector('#q img.flag').src;
-  return Object.keys(ORBISTA_FLAGS).find(k => ORBISTA_FLAGS[k] === src); }"""
+CODE = "() => document.getElementById('q').dataset.code"
 
 async def neu(b, profil=None):
     pg = await (await b.new_context(viewport={'width': 390, 'height': 844})).new_page()
     errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
-    if profil:
-        await pg.add_init_script("localStorage.setItem('orbista.profile',JSON.stringify(%s))" % profil)
+    profil = profil or '{}'
+    await pg.add_init_script("localStorage.setItem('orbista.profile',JSON.stringify(Object.assign({topic:'flag'},%s)))" % profil)
     await pg.goto('file://' + W + 'orbista.html'); await pg.wait_for_timeout(200)
     return pg, errs
 
 async def rennen(pg, fehler):
-    await pg.click('[data-f="1"]'); await pg.click('[data-r="Europa"]'); await pg.click('[data-l="10"]'); await pg.click('#go')
+    await pg.click('[data-p="race"]'); await pg.click('#raceKinds [data-k="f"]'); await pg.click('#regions [data-r="Europa"]')
+    await pg.click('#answers [data-a="0"]'); await pg.click('#setupGo')
     for i in range(10):
         await pg.wait_for_selector('.opt:not([disabled])')
         hud = await pg.inner_text('#hudScore'); assert re.match(r'\d:\d\d,\d · %d/10' % (i + 1), hud), hud
@@ -30,12 +30,13 @@ async def main():
         b = await p.chromium.launch(executable_path=os.environ.get('PW_CHROMIUM'))
         # Level 1: Zeitrennen gesperrt
         pg, errs = await neu(b)
-        assert await pg.is_disabled('[data-f="1"]'), 'Zeitrennen müsste gesperrt sein'
-        assert 'ab Level 2' in await pg.inner_text('#forms')
+        assert await pg.is_disabled('[data-p="race"]'), 'Zeitrennen müsste gesperrt sein'
+        assert 'Ab Level 2' in await pg.inner_text('#paths')
 
         # Level 2, erstes Rennen mit 2 Fehlern: 10 s Strafzeit, erste Bestzeit, +30 XP
         pg, errs = await neu(b, '{xp:100}')
-        await pg.click('[data-f="1"]'); assert 'Noch keine Bestzeit' in await pg.inner_text('#raceInfo')
+        await pg.click('[data-p="race"]'); assert 'Noch keine Bestzeit' in await pg.inner_text('#answerHint')
+        await pg.click('#setupBack')
         txt = await rennen(pg, (2, 7)); print(txt.splitlines()[:4])
         assert '8 von 10 richtig' in txt and '10 s Strafzeit' in txt and 'Erste Bestzeit' in txt, txt
         P = await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))")
@@ -43,7 +44,8 @@ async def main():
         assert 10000 <= best < 60000, best
         assert 'Schnellste Antwort' in txt and 'Langsamste Antwort' in txt
         await pg.screenshot(path=W + 't3_ergebnis.png', full_page=True)
-        await pg.click('#home'); assert 'Deine Bestzeit für diese Strecke' in await pg.inner_text('#raceInfo')
+        await pg.click('#homeBtn'); assert 'Schnellste Runde' in await pg.inner_text('#paths')
+        await pg.click('[data-p="race"]'); assert 'Deine Bestzeit für diese Strecke' in await pg.inner_text('#answerHint')
         assert not errs, errs
 
         # Rekord schlagen und verfehlen

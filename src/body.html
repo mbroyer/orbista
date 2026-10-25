@@ -1,33 +1,53 @@
 <main>
-  <div class="brand"><div class="pennant" aria-hidden="true"><i></i><i></i></div><div><h1>Orbista</h1><p class="sub">Flaggen und Hauptstädte der Welt</p></div></div>
-
-  <section class="panel status" id="status"></section>
-
-  <section id="start" class="panel">
-    <div class="label">Thema</div>
-    <div class="chips" id="topics"></div>
-    <div class="label">Spielart</div>
-    <div class="modes" id="modes"></div>
-    <div class="label">Weltregion</div>
-    <div class="chips" id="regions"></div>
-    <div class="label">Spielform</div>
-    <div class="chips" id="forms"></div>
-    <p class="muted race" id="raceInfo" hidden></p>
-    <div class="label">Runde</div>
-    <div class="chips" id="lengths"></div>
-    <div class="mastery"><div class="label"><span id="mastTitle"></span> · <span id="mastLabel"></span></div><div class="bar stars"><div id="mastBar"></div></div><small class="muted" id="mastStars"></small></div>
-    <button class="btn" id="go">Los geht’s</button>
-    <button class="btn ghost" id="passBtn">Reisepass</button>
+  <section id="welcome" class="screen" hidden>
+    <svg class="globe big" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26M4.5 8h21M4.5 22h21"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg>
+    <h1 class="hero">Willkommen bei Orbista</h1>
+    <p class="muted lead">Zwei kurze Fragen, dann stellt Orbista deine erste Runde zusammen. Alles lässt sich später ändern.</p>
+    <div class="label">1 · Was möchtest du lernen?</div>
+    <div class="tri" id="wTopics"></div>
+    <div class="label">2 · Wie viel Zeit am Tag?</div>
+    <div class="lines" id="wGoals"></div>
+    <button class="btn" id="begin">Reise beginnen</button>
   </section>
 
-  <section id="pass" class="panel" hidden></section>
+  <section id="home" class="screen">
+    <header class="top">
+      <div class="brand"><svg class="globe" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg><h1>Orbista</h1></div>
+      <span class="pill" id="lvlPill"></span>
+    </header>
+    <div class="card today">
+      <div class="todayrow" id="status"></div>
+      <button class="btn go" id="go"><span><b>Weiterreisen</b><small id="goSub"></small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="label">Gezielt üben</div>
+    <div class="lines" id="paths"></div>
+    <p class="muted topicline" id="topicLine"></p>
+    <div class="madeby" id="madeby"><span>Made with love by</span><img alt="A Simple Man's Lab" src="__LOGO__"></div>
+  </section>
 
-  <section id="game" class="panel" hidden>
-    <div class="hud"><button class="quit" id="quit" aria-label="Runde beenden">✕</button><div class="bar"><div id="prog"></div></div><div class="stat" id="hudScore"></div></div>
+  <section id="setup" class="screen" hidden>
+    <div class="back"><button class="iconbtn" id="setupBack" aria-label="Zurück"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span class="muted">Gezielt üben</span></div>
+    <h2 class="hero" id="setupTitle"></h2>
+    <p class="muted lead" id="setupSub"></p>
+    <div id="raceBox" hidden><div class="label">Strecke</div><div class="seg" id="raceKinds"></div></div>
+    <div class="lines regions" id="regions"></div>
+    <div class="label">Antworten</div>
+    <div class="seg" id="answers"></div>
+    <p class="muted small" id="answerHint"></p>
+    <button class="btn go" id="setupGo"><span><b>Los geht’s</b><small id="setupGoSub"></small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </section>
+
+  <section id="pass" class="screen" hidden></section>
+
+  <section id="game" class="screen" hidden>
+    <div class="hud"><button class="iconbtn" id="quit" aria-label="Runde beenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="bar"><div id="prog"></div></div><div class="stat" id="hudScore"></div></div>
     <div class="q" id="q"></div>
   </section>
 
-  <section id="result" class="panel" hidden></section>
+  <section id="result" class="screen" hidden></section>
 
-  <div class="madeby" id="madeby"><span>Made with love by</span><img alt="A Simple Man's Lab" src="__LOGO__"></div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="home" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>Reise</button>
+    <button data-tab="pass" id="passBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="11" r="3"/><path d="M9 17h6"/></svg>Reisepass</button>
+  </nav>
 </main>

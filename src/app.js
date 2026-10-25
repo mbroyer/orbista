@@ -261,6 +261,12 @@ $("setupGo").onclick=()=>startSetup();
 // ein kleines markiertes Land bekommt stattdessen einen Pfeil.
 const MAP=window.ORBISTA_MAP;
 let MAP_VIEW=null;
+// Gradnetz alle 10° in derselben Projektion wie tools/map.py (Natural Earth I), bis 360° für das verschobene Ozeanien
+function gridPath(){
+  const P=(lon,lat)=>{const p=lat*Math.PI/180,l=lon*Math.PI/180,p2=p*p,p4=p2*p2;
+    return Math.round(800*l*(.8707-.131979*p2+p4*(-.013791+p4*(.003971*p2-.001529*p4))))+" "+Math.round(-800*p*(1.007226+p2*(.015085+p4*(-.044475+.028874*p2-.005916*p4))))};
+  const line=pts=>"M"+pts.map(([a,b])=>P(a,b)).join("L"),r=(a,b,s)=>Array.from({length:Math.floor((b-a)/s)+1},(_,i)=>a+i*s);
+  return r(-180,360,10).map(lon=>line(r(-80,80,5).map(lat=>[lon,lat]))).join("")+r(-80,80,10).map(lat=>line(r(-180,360,5).map(lon=>[lon,lat]))).join("")}
 // Nachbarn für die Auswahl beim markierten Land: die nächsten Länder nach Kartenabstand
 function near(code){const [x,y]=MAP.box[code]||[0,0];
   const d=c=>{const b=MAP.box[c];return b?Math.hypot(b[0]-x,b[1]-y):1e9};
@@ -269,7 +275,8 @@ function mapView(){
   if(!MAP_VIEW){
     const el=document.createElement("div");el.className="mapbox";el.id="map";
     const small=ALL.filter(c=>MAP.box[c]&&MAP.box[c][2]<40);
-    el.innerHTML=`<svg role="img" aria-label="Landkarte" preserveAspectRatio="xMidYMid meet"><path class="bg" d="${MAP.bg}"/>${Object.keys(MAP.p).map(c=>`<path class="c" data-c="${c}" d="${MAP.p[c]}"/>`).join("")}${small.map(c=>`<circle class="dot" data-c="${c}" cx="${MAP.box[c][0]}" cy="${MAP.box[c][1]}" r="4"/>`).join("")}<g class="arrow" hidden><circle/><path/></g></svg>
+    const land=`<path d="${MAP.bg}"/>${Object.values(MAP.p).map(d=>`<path d="${d}"/>`).join("")}`;
+    el.innerHTML=`<svg role="img" aria-label="Landkarte" preserveAspectRatio="xMidYMid meet"><defs><g id="mapLand">${land}</g></defs><path class="grid" d="${gridPath()}"/>${[3,2,1].map(i=>`<use href="#mapLand" class="wl wl${i}"/>`).join("")}<path class="bg" d="${MAP.bg}"/>${Object.keys(MAP.p).map(c=>`<path class="c${MAP.isl.includes(c)?" isl":""}" data-c="${c}" d="${MAP.p[c]}"/>`).join("")}${small.map(c=>`<circle class="dot" data-c="${c}" cx="${MAP.box[c][0]}" cy="${MAP.box[c][1]}" r="4"/>`).join("")}<g class="arrow" hidden><circle/><path/></g></svg>
       <div class="zoom"><button type="button" data-z=".6" aria-label="Näher heran">+</button><button type="button" data-z="1.66" aria-label="Weiter weg">−</button></div>`;
     const svg=el.querySelector("svg"),arrow=el.querySelector(".arrow");let home=[0,0,1,1],vb=home,target=null;
     // Pfeil in fester Bildschirmgröße (k = Karteneinheiten pro Pixel), von der Kartenmitte her auf das Land, mit Ring darum;

@@ -23,7 +23,7 @@ Findet Playwright den Browser nicht, den Pfad zu Chromium in `PW_CHROMIUM` setze
 - `src/style.css` – Design im Stil „Atlas“ (Kartenpapier, Young Serif und IBM Plex Sans, Druckstempel-Knöpfe), hell und dunkel über Tokens am Dateianfang
 - `src/data.js` – Länder nach Region, deutsche Namen, Hauptstädte, Schreibweisen fürs Tippen
 - `src/app.js` – Spiellogik, Fortschritt, Ansichten
-- `flags/` – 197 SVG-Flaggen (Quelle: npm-Paket country-flag-icons)
+- `flags/` – 197 detaillierte SVG-Flaggen im Format 4:3 (Quelle: npm-Paket flag-icons 7.2.3, MIT-Lizenz in `flags/LICENSE-flag-icons`, mit svgo verkleinert)
 - `assets/` – Logo A Simple Man's Lab
 - `web/deploy.py` – legt die gebaute App ins Repo `mbroyer/mbroyer.github.io`, Ordner `orbista/`
 - `tests/` – Playwright-Skripte (Viewport 390 px)

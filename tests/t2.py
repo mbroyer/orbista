@@ -39,7 +39,7 @@ async def main():
         assert P['xp'] == 400 and P['streak'] == 1 and P['goalDay'] == T, P
         txt = await pg.inner_text('#result'); assert '+400 XP' in txt and 'Level 3 erreicht' in txt and 'Tagesziel geschafft' in txt, txt
         M = await get(pg, 'orbista.mastery'); assert len(M) == 10 and all(m['s'] == 1 and m['due'] == T + 1 for m in M.values()), M
-        await pg.click('#homeBtn'); assert (await pg.inner_text('#lvlPill')) == 'Level 3 · Tourist'
+        await pg.click('#homeBtn'); assert (await pg.text_content('#lvlPill')) == 'Level 3 · Tourist'
         await pg.screenshot(path=W + 't2_start.png', full_page=True)
         assert not errs, errs
 
@@ -48,10 +48,11 @@ async def main():
             store = '{"orbista.profile":{topic:"flag",xp:0,day:T-1,dayXp:60,goal:30,streak:4,goalDay:%s,restWeek:%d}}' % (goalDay, rest)
             pg, errs = await neu(b, store)
             sk = int((await pg.inner_text('.streak b')).strip()); assert sk == vorher, (goalDay, sk)
-            await pg.click('#go'); await richtig(pg, 2)
+            await pg.click('#go'); await richtig(pg, 5)
             P = await get(pg, 'orbista.profile'); print('Serie', goalDay, sk, '→', P['streak'])
             assert P['streak'] == nachher and P['goalDay'] == T, (goalDay, P)
             if goalDay == 'T-2': assert P['restWeek'] != -1
+            assert P['goalQ'] == 5 and 'goal' not in P, P  # altes Ziel 30 XP → 5 Fragen
             assert not errs, errs
 
         # 3. Sterne: zweiter Stern erst an einem neuen Tag, dritter nach getippter Antwort und 7 Tagen; Fehler kostet einen Stern

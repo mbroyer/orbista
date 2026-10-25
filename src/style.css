@@ -4,18 +4,19 @@
   --accent:#1f5673; --accent-ink:#ffffff; --gold:#b5701c; --track:#e6ddcb; --sel:#e8dfcc;
   --ok:#2f7a4f; --ok-bg:#e1eedf; --bad:#b03a2e; --bad-bg:#f6e1dc; --contour:#d9cfbc;
   --shadow:0 1px 0 var(--line),0 6px 18px rgba(29,43,58,.10);
+  --pass:#1c3a4f; --pass-ink:#f3e6c8; --pass-spine:#142b3b; --pass-gold:#d9a85b; --guilloche:rgba(31,86,115,.05);
   --logo-filter:none; --f-display:"Young Serif",Georgia,serif; --f-body:"IBM Plex Sans",system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#111a24; --card:#18232f; --ink:#ede6d6; --muted:#a2a9b0; --line:#2c3a48; --line2:#3b4b5b;
   --accent:#7fb7d6; --accent-ink:#0e1a24; --gold:#e0a458; --track:#2c3a48; --sel:#22303e;
   --ok:#7cc79a; --ok-bg:#183326; --bad:#f08a7e; --bad-bg:#3a1f1c; --contour:#1f2b37;
-  --shadow:0 1px 0 rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.3); --logo-filter:brightness(0) invert(1); color-scheme:dark}}
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.3); --pass:#1f4560; --pass-ink:#f3e6c8; --pass-spine:#16344a; --pass-gold:#e0b46a; --guilloche:rgba(127,183,214,.05); --logo-filter:brightness(0) invert(1); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#111a24; --card:#18232f; --ink:#ede6d6; --muted:#a2a9b0; --line:#2c3a48; --line2:#3b4b5b;
   --accent:#7fb7d6; --accent-ink:#0e1a24; --gold:#e0a458; --track:#2c3a48; --sel:#22303e;
   --ok:#7cc79a; --ok-bg:#183326; --bad:#f08a7e; --bad-bg:#3a1f1c; --contour:#1f2b37;
-  --shadow:0 1px 0 rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.3); --logo-filter:brightness(0) invert(1); color-scheme:dark}
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.3); --pass:#1f4560; --pass-ink:#f3e6c8; --pass-spine:#16344a; --pass-gold:#e0b46a; --guilloche:rgba(127,183,214,.05); --logo-filter:brightness(0) invert(1); color-scheme:dark}
 *{box-sizing:border-box}
 html{color-scheme:light}
 img{max-width:100%}
@@ -171,26 +172,43 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 @media (prefers-reduced-motion:no-preference){.shake{animation:sh .3s}}
 @keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
-/* Reisepass */
-.passsum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.passsum>div{display:flex;flex-direction:column;gap:2px;min-width:0}
-.passsum b{font-family:var(--f-display);font-weight:400;font-size:1.3rem;color:var(--gold)}
-.passsum>div:last-child b{color:var(--accent)}
-.passsum small{color:var(--muted);font-size:.78rem}
-.stamps{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
-.stamp{aspect-ratio:1;border-radius:50%;border:1px dashed var(--line2);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted);padding:6px;min-width:0}
-.stamp b{font-family:var(--f-display);font-weight:400;font-size:.74rem;line-height:1.1}
-.stamp small{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em}
-.stamp.on{border:3px double var(--accent);color:var(--accent);transform:rotate(-8deg)}
-.stamp.on.c{border-color:var(--gold);color:var(--gold);transform:rotate(6deg)}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
-.tile{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;min-width:0}
-.tile img{width:100%;aspect-ratio:4/3;object-fit:cover;box-shadow:0 0 0 1px var(--line)}
-.tile b{font-size:.8rem;font-weight:500;line-height:1.15;overflow-wrap:anywhere;hyphens:auto}
-.tile span{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
-.tile i{font-style:normal;color:var(--gold);font-size:.8rem;letter-spacing:.05em}
-.tile.grey img{filter:grayscale(1);opacity:.35}
-.tile.grey b{color:var(--muted)}
+/* Reisepass: Umschlag, Visa-Seite, Sammelalbum */
+.cover{display:flex;gap:16px;align-items:center;background:var(--pass);color:var(--pass-ink);border-radius:6px 14px 14px 6px;padding:18px 18px 16px 22px;box-shadow:inset 6px 0 0 var(--pass-spine),4px 4px 0 var(--ink)}
+.cover .globe{width:58px;height:58px;stroke:var(--pass-gold);stroke-width:1.1}
+.cover .globe .dot{fill:var(--pass-gold)}
+.cover>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.cover small{font-size:.62rem;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:var(--pass-gold)}
+.cover h2{font-size:1.45rem;line-height:1.1}
+.cover span{font-size:.8rem;opacity:.8}
+.visa{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:12px;
+  background-image:repeating-linear-gradient(135deg,transparent 0 9px,var(--guilloche) 9px 10px)}
+.visahead{display:flex;justify-content:space-between;align-items:baseline}
+.visahead h3{font-size:1.2rem}
+.visahead small{color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
+.passcol{display:flex;flex-direction:column;gap:18px;min-width:0}
+.stamps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stamp{aspect-ratio:1;border-radius:50%;border:1px dashed var(--line2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;color:var(--muted);padding:4px;min-width:0}
+.stamp b{font-family:var(--f-display);font-weight:400;font-size:.8rem;line-height:1.05}
+.stamp small{font-size:.55rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.stamp i{font-style:normal;font-size:.58rem;font-variant-numeric:tabular-nums}
+.stamp.on{border:3px double var(--accent);color:var(--accent);transform:rotate(-8deg);box-shadow:inset 0 0 0 4px var(--card),inset 0 0 0 5px var(--accent)}
+.stamp.on.c{border-color:var(--gold);color:var(--gold);transform:rotate(6deg);box-shadow:inset 0 0 0 4px var(--card),inset 0 0 0 5px var(--gold)}
+.chip{flex:none;font-size:.85rem;font-weight:600;padding:8px 14px;min-height:40px;border-radius:999px;border:2px solid var(--line2);background:transparent}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.albumhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.albumhead>div{display:flex;flex-direction:column;gap:2px}
+.albumhead h3{font-size:1.6rem}
+.albumhead span{font-size:.85rem}
+.albumhead>b{font-family:var(--f-display);font-weight:400;font-size:1.6rem;color:var(--gold);font-variant-numeric:tabular-nums}
+.album{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px 12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 10px;box-shadow:inset 0 0 0 6px var(--card),inset 0 0 0 7px var(--track)}
+.slot{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;min-width:0}
+.slot b{font-size:.78rem;font-weight:600;line-height:1.15;overflow-wrap:anywhere;hyphens:auto}
+.slot span{font-size:.72rem;color:var(--muted);overflow-wrap:anywhere}
+.slot i{font-style:normal;color:var(--gold);font-size:.75rem;letter-spacing:.06em}
+.sticker{width:100%;box-sizing:border-box;padding:4px;background:#fff;border-radius:3px;box-shadow:0 1px 0 var(--line),0 4px 10px rgba(29,43,58,.16);transform:rotate(var(--tilt,0deg))}
+.sticker img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.hole{width:100%;aspect-ratio:4/3;box-sizing:border-box;border:1.5px dashed var(--line2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-size:1.1rem;color:var(--muted)}
+.slot.empty b{font-weight:500;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .besttimes{display:flex;flex-direction:column;gap:6px}
 .besttimes>div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:6px}
@@ -263,6 +281,11 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 
   /* Ergebnis und Reisepass */
   #result{max-width:760px;width:100%;margin-inline:auto}
-  .tiles{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
-  .stamps{grid-template-columns:repeat(6,minmax(0,1fr));max-width:760px}
+  #pass{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);column-gap:40px;align-items:start}
+  #pass>.passcol:first-child{position:sticky;top:24px}
+  .stamps{gap:12px}
+  .stamp b{font-size:.85rem}.stamp small{font-size:.58rem}.stamp i{font-size:.6rem}
+  .album{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
+
+@media (max-width:420px){.pill .pt{display:none}}

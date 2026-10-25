@@ -12,13 +12,13 @@ Privates Lernspiel (Flaggen und Hauptstädte), gleiche Linie wie die anderen Ler
 - Sterne: 1 = einmal richtig, 2 = gekonnt (r ≥ 2, r > w, an zwei Tagen richtig), 3 = gemeistert (einmal ohne Tipp-Hilfe richtig getippt und ≥ 7 Tage nach dem zweiten Stern wieder richtig). Fehler kostet einen Stern und macht die Karte sofort fällig. Fällig nach 1, 3 bzw. 14 Tagen. Runden nehmen zuerst fällige Karten, dann neue.
 - Profil unter `orbista.profile`: XP, Tagesziel (30/50/100, Tipp auf den Ring), Serie mit einem Ruhetag pro Woche. XP: 10 Auswahl, 20 Tippen, +5 im Thema Beides, halb mit Tipp-Hilfe, Serienbonus +2 je Folge bis +10, +20 neuer Stern, +50 gemeistert, +30 perfekte Runde ab 10 Fragen. Level L ab 50·L·(L−1) XP, alle 5 Level ein neuer Titel.
 - Zeitrennen (Spielform, ab Level 2): Rennzeit = Summe der Antwortzeiten + 5 s je Fehler, die Lösungsanzeige zählt nicht. Bestzeiten in `orbista.profile` unter `best`, Schlüssel `Spielart|Region|Länge`. Neue Bestzeit +30 XP. „Fehler nochmal üben“ läuft immer als Übung.
-- Nach Änderungen `python3 build.py` und `python3 tests/t1.py`, `t2.py`, `t3.py`.
+- Reisepass (Knopf unter „Los geht’s“): alle Länder nach Region mit Sternen, umschaltbar Flaggen/Hauptstädte, Stempel und Bestzeiten. Ein Stempel pro Region und Karte (Flaggen, Hauptstädte), sobald alle Karten der Region 2 Sterne haben. Vergeben am Ende einer Runde, einmalig, +100 XP, gespeichert in `orbista.profile` unter `stamps` (`Region|f` bzw. `Region|c`).
+- Nach Änderungen `python3 build.py` und `python3 tests/t1.py` bis `t4.py`.
 
 ## Nächste Schritte (Spielkonzept 2.0)
 Konzept: https://claude.ai/artifact/UEUFjDKwakqbrAUHwzZ6R5
-1. Reisepass mit Regionsstempeln und Bestzeiten.
-2. Abzeichen, Blitz, Zwillinge.
-3. Cloudflare Worker mit Codes und Spielstand wie bei NumNum (kein Supabase), dann Rangliste.
+1. Abzeichen, Blitz, Zwillinge.
+2. Cloudflare Worker mit Codes und Spielstand wie bei NumNum (kein Supabase), dann Rangliste.
 
 ## Hinweise
 - Ländernamen kommen aus `Intl.DisplayNames('de')`, Abweichungen stehen in `NAME_FIX` in `src/data.js`. Zusätzliche Tipp-Schreibweisen in `ALIAS`.

@@ -146,7 +146,7 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .fb span{color:var(--muted);font-size:.95rem}
 .fb .note{color:var(--ink);font-size:.9rem;margin-top:4px}
 .stars{color:var(--gold);letter-spacing:.1em}
-.fb .stars{font-size:1.15rem}
+.fb .stars{font-size:1.15rem;align-self:flex-start}
 .fb .stars.up{animation:pop .5s}
 @keyframes pop{50%{transform:scale(1.25)}}
 
@@ -195,3 +195,74 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .besttimes{display:flex;flex-direction:column;gap:6px}
 .besttimes>div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:6px}
 .besttimes b{font-variant-numeric:tabular-nums;font-family:var(--f-display);font-weight:400}
+
+/* Breite Bildschirme (Desktop, iPad quer): Breite nutzen, zweispaltig, Knöpfe direkt unter dem Inhalt, Leiste als schwebende Pille */
+@media (min-width:900px){
+  body{padding-inline:32px;padding-block:32px 0;background-size:100% 420px}
+  main{max-width:1040px}
+  .screen{padding-bottom:110px}
+  #game,#result{padding-bottom:40px}
+  .hero{font-size:2.5rem}
+  #begin,#setupGo{margin-top:8px}
+
+  .tabs{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);margin:0;display:flex;gap:4px;padding:5px;border:2px solid var(--ink);border-radius:999px;box-shadow:3px 3px 0 var(--ink);z-index:5}
+  .tabs button{flex-direction:row;gap:8px;min-height:44px;padding:8px 20px;border-radius:999px;font-size:.92rem}
+  .tabs svg{width:20px;height:20px}
+  .tabs button[aria-current="page"]{background:var(--sel)}
+
+  /* Erster Start: eine lesbare Spalte, Knopf direkt darunter */
+  #welcome{max-width:680px;width:100%;margin-inline:auto;padding-top:4vh}
+  #welcome .tri button{min-height:110px;font-size:1.05rem}
+  #welcome .tri svg{width:30px;height:30px}
+  #welcome #begin{align-self:flex-start;min-width:280px}
+
+  /* Startseite: links heute und Weiterreisen, rechts gezielt üben */
+  #home{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);column-gap:40px;row-gap:16px;align-content:start;
+    grid-template-areas:"top top" "today lbl" "today paths" "topic paths" "made made"}
+  #home>.top{grid-area:top;margin-bottom:8px}
+  #home>.today{grid-area:today;align-self:start;padding:24px;gap:22px}
+  #home>.label{grid-area:lbl;align-self:end}
+  #home>#paths{grid-area:paths;align-self:start}
+  #home>#topicLine{grid-area:topic;align-self:start}
+  #home>#madeby{grid-area:made;padding-top:56px}
+  .today .goal,.today .goal svg{width:84px;height:84px}
+  .today .goal b{font-size:1.25rem}
+  .todaytxt b{font-size:1.55rem}
+  .btn.go{min-height:76px}
+  .btn.go b{font-size:1.45rem;font-weight:400}
+
+  /* Gezielt üben: links Regionen, rechts Antwortart und Start */
+  #setup{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);column-gap:40px;row-gap:16px;align-content:start;
+    grid-template-areas:"back back" "title title" "sub sub" "regions race" "regions alabel" "regions answers" "regions hint" "regions go" "regions .";grid-template-rows:repeat(8,auto) 1fr}
+  #setup>.back{grid-area:back}
+  #setup>#setupTitle{grid-area:title}
+  #setup>#setupSub{grid-area:sub}
+  #setup>#raceBox{grid-area:race;display:flex;flex-direction:column;gap:12px}
+  #setup>#raceBox[hidden]{display:none}
+  #setup>#regions{grid-area:regions;align-self:start}
+  #setup>.label{grid-area:alabel}
+  #setup>#answers{grid-area:answers}
+  #setup>#answerHint{grid-area:hint;margin:0}
+  #setup>#setupGo{grid-area:go;align-self:start}
+
+  /* Frage: mit großer Flagge zweispaltig (Flagge links, Antworten rechts), sonst eine mittige Spalte */
+  #game{max-width:1040px;width:100%;margin-inline:auto}
+  #game .hud{max-width:none}
+  .q{max-width:680px;width:100%;margin-inline:auto}
+  .q h2{font-size:2rem}
+  .q .opts:not(.imgs){display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .opt{min-height:64px;font-size:1.15rem}
+  .q:has(.stage){max-width:none;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);column-gap:40px;row-gap:18px;align-items:start}
+  .q:has(.stage)>*{grid-column:2}
+  .q:has(.stage)>.kicker,.q:has(.stage)>h2{grid-column:1/-1}
+  .q:has(.stage)>.stage{grid-column:1;grid-row:3/span 6;padding:40px}
+  .q:has(.stage) .flag{max-width:none}
+  .q:has(.stage) .opts{display:flex}
+  .q .flag.small{width:128px}
+  .q .opts.imgs{max-width:560px}
+
+  /* Ergebnis und Reisepass */
+  #result{max-width:760px;width:100%;margin-inline:auto}
+  .tiles{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+  .stamps{grid-template-columns:repeat(6,minmax(0,1fr));max-width:760px}
+}

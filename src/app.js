@@ -390,14 +390,15 @@ function renderPass(){
   $("pass").innerHTML=`<div class="passcol"><div class="cover">
     <svg class="globe" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26M4.5 8h21M4.5 22h21"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg>
     <div><small>Reisepass · Orbista</small><h2>${titleOf(L)}</h2><span>Level ${L}${isFinite(first)?` · unterwegs seit ${dayStr(first)}`:""}</span>
-    <span>★ ${tot("f")} Flaggen · ★ ${tot("c")} Hauptstädte</span></div></div>
+    <span class="covermini">★ ${tot("f")} Flaggen · ★ ${tot("c")} Hauptstädte</span></div>
+    <div class="coverstats"><div><b>★ ${tot("f")}</b><small>Flaggen-Sterne</small></div><div><b>★ ${tot("c")}</b><small>Hauptstadt-Sterne</small></div><div><b>${Object.keys(stamps).length} / ${2*regs.length}</b><small>Visa</small></div></div></div>
   <div class="visa"><div class="visahead"><h3>Visa</h3><small>${Object.keys(stamps).length} von ${2*regs.length}</small></div>
   <div class="stamps">${regs.map(r=>["f","c"].map(k=>{const on=stamps[r+"|"+k];
     return `<div class="stamp${on?" on":""} ${k}" data-stamp="${r}|${k}" aria-label="${r}, ${KIND[k]}${on?", erreicht":", noch offen"}"><small>${KIND[k]}</small><b>${r}</b>${on?`<i>${dayStr(on)}</i>`:""}</div>`}).join("")).join("")}</div>
   <p class="muted race">Ein Visum gibt es, wenn alle Flaggen oder alle Hauptstädte einer Region zwei Sterne haben. Es bringt ${STAMP_XP} XP.</p></div></div>
   <div class="passcol"><div class="label">Sammelalbum</div>
-  <div class="seg" id="passKinds">${["f","c"].map(k=>`<button data-k="${k}" aria-pressed="${passKind===k}">${KIND[k]}</button>`).join("")}</div>
-  <div class="chips" id="passRegions">${regs.map(r=>`<button class="chip" data-r="${r}" aria-pressed="${r===passRegion}">${r}</button>`).join("")}</div>
+  <div class="albumbar"><div class="seg" id="passKinds">${["f","c"].map(k=>`<button data-k="${k}" aria-pressed="${passKind===k}">${KIND[k]}</button>`).join("")}</div>
+  <div class="chips" id="passRegions">${regs.map(r=>`<button class="chip" data-r="${r}" aria-pressed="${r===passRegion}">${r}</button>`).join("")}</div></div>
   <div class="albumhead"><div><h3>${passRegion}</h3><span class="muted">${have} von ${list.length} eingeklebt</span></div><b>${Math.round(100*have/list.length)} %</b></div>
   <div class="album">${list.map((c,i)=>{const n=stars(passKind,c);
     return n?`<div class="slot" data-c="${c}"><div class="sticker" style="--tilt:${tilt[i%tilt.length]}deg"><img src="${flag(c)}" alt=""></div><b>${C[c].name}</b>${passKind==="c"?`<span>${C[c].cap}</span>`:""}<i aria-label="${n} von 3 Sternen">${starStr(n)}</i></div>`

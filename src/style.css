@@ -42,6 +42,7 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .globe{width:30px;height:30px;fill:none;stroke:var(--ink);stroke-width:1.4;flex:none}
 .globe .dot{fill:var(--gold);stroke:none}
 .globe.big{width:56px;height:56px;stroke-width:1.2;margin-top:20px}
+.topr{display:flex;align-items:center;gap:4px}
 .pill{font-size:.8rem;font-weight:600;border:1px solid var(--ink);border-radius:999px;padding:5px 12px;white-space:nowrap}
 
 /* Heute: Tagesziel, Serie, Level und der Hauptknopf */

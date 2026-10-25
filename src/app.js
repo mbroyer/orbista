@@ -71,6 +71,37 @@ function addXp(n){
 }
 const dayXp=()=>P.day===today()?P.dayXp:0;
 
+// Klänge „Holz“: Marimba-Töne, direkt im Browser erzeugt (keine Audiodateien). Stummschalten auf der Startseite, gemerkt in orbista.profile.sound
+let AC=null,OUT=null;
+const soundOn=()=>P.sound!==false;
+function ac(){
+  if(!AC){const K=window.AudioContext||window.webkitAudioContext;if(!K)return null;AC=new K();OUT=AC.createGain();OUT.gain.value=.7;OUT.connect(AC.destination)}
+  if(AC.state==="suspended")AC.resume();
+  return AC;
+}
+const hz=m=>440*Math.pow(2,(m-69)/12);
+function tone(type,f,s,peak,att,dec,f2){
+  const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,s);if(f2)o.frequency.exponentialRampToValueAtTime(f2,s+att+dec);
+  g.gain.setValueAtTime(.0001,s);g.gain.linearRampToValueAtTime(peak,s+att);g.gain.exponentialRampToValueAtTime(.0001,s+att+dec);
+  o.connect(g).connect(OUT);o.start(s);o.stop(s+att+dec+.05);
+}
+function marimba(m,t=0,d=.5,v=.32){const s=AC.currentTime+t,f=hz(m);tone("sine",f,s,v,.004,d);tone("sine",f*4,s,v*.18,.002,.06);tone("sine",f*10,s,v*.05,.001,.02)}
+function thump(){
+  const s=AC.currentTime;tone("sine",110,s,.5,.003,.22,50);
+  const n=Math.ceil(AC.sampleRate*.14),buf=AC.createBuffer(1,n,AC.sampleRate),ch=buf.getChannelData(0);for(let i=0;i<n;i++)ch[i]=Math.random()*2-1;
+  const src=AC.createBufferSource(),fl=AC.createBiquadFilter(),g=AC.createGain();src.buffer=buf;fl.type="lowpass";fl.frequency.setValueAtTime(900,s);fl.frequency.exponentialRampToValueAtTime(200,s+.09);
+  g.gain.setValueAtTime(.35,s);g.gain.exponentialRampToValueAtTime(.0001,s+.09);src.connect(fl).connect(g).connect(OUT);src.start(s);src.stop(s+.14);
+}
+const SFX={
+  tap:()=>marimba(91,0,.06,.12),
+  ok:()=>{marimba(76,0,.35);marimba(83,.08,.45)},
+  bad:()=>{marimba(57,0,.35,.26);marimba(53,.13,.5,.22)},
+  star:()=>{[79,83,88].forEach((m,i)=>marimba(m,i*.07,.4,.28));marimba(95,.22,.6,.16)},
+  end:()=>{[60,64,67,72].forEach((m,i)=>marimba(m,i*.09,.5));[72,76,79].forEach(m=>marimba(m,.45,1.1,.18))},
+  big:()=>{SFX.end();[79,84,88,91].forEach((m,i)=>marimba(m,1+i*.08,.5,.22));[84,88,91].forEach(m=>marimba(m,1.4,1.4,.15))},
+  stamp:thump};
+function play(k,delay=0){if(!soundOn())return;try{if(!ac())return;delay?setTimeout(()=>SFX[k](),delay):SFX[k]()}catch(e){}}
+
 // Spielarten: der geführte Ablauf wählt sie selbst; beim gezielten Üben nur „Auswählen“ oder „Eintippen“
 const MODE_NAME={f2l:"Flagge → Land",l2f:"Land → Flagge",type:"Land tippen",l2c:"Land → Hauptstadt",c2l:"Hauptstadt → Land",ctype:"Hauptstadt tippen",f2c:"Flagge → Hauptstadt",fctype:"Hauptstadt zur Flagge tippen"};
 const CAPMODES=["l2c","c2l","ctype","f2c","fctype"], TYPEMODES=["type","ctype","fctype"], BOTHMODES=["f2c","fctype"];
@@ -138,6 +169,7 @@ let plan=null;
 function renderHome(){
   const L=levelOf(P.xp),b=xpFor(L+1),dx=dayXp(),d=Math.min(dx,P.goal),sk=streakNow(),r=28,u=2*Math.PI*r,left=P.goal-dx;
   $("lvlPill").textContent=`Level ${L} · ${titleOf(L)}`;
+  renderSound();
   $("status").innerHTML=`<button class="goal" id="goalBtn" aria-label="Tagesziel ${dx} von ${P.goal} XP, antippen zum Ändern"><svg viewBox="0 0 68 68" aria-hidden="true"><circle cx="34" cy="34" r="${r}" class="ring0"/><circle cx="34" cy="34" r="${r}" class="ring1" stroke-dasharray="${u*d/P.goal} ${u}"/></svg><b>${dx}</b></button>
   <div class="todaytxt"><b>Deine Reise heute</b><span>${left>0?`${dx} von ${P.goal} XP · noch ${left} bis zum Tagesziel`:`Tagesziel geschafft · ${dx} XP`}</span><span class="streak">Serie: <b>${sk}</b> ${sk===1?"Tag":"Tage"} · ${b-P.xp} XP bis Level ${L+1}</span></div>`;
   plan=autoPlan();
@@ -153,6 +185,12 @@ function goHome(){renderHome();show("home")}
 $("status").onclick=e=>{if(e.target.closest("#goalBtn")){P.goal=P.goal===30?50:P.goal===50?100:30;saveProfile();renderHome()}};
 $("topicLine").onclick=e=>{if(e.target.id==="changeTopic")openWelcome()};
 $("go").onclick=()=>startAuto();
+const SPK='<path d="M4 9h4l5-4v14l-5-4H4z"/>';
+function renderSound(){const on=soundOn();$("soundBtn").setAttribute("aria-pressed",String(on));$("soundBtn").setAttribute("aria-label",on?"Klänge ausschalten":"Klänge einschalten");
+  $("soundBtn").innerHTML=svg(SPK+(on?'<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>':'<path d="M16 9l5 6M21 9l-5 6"/>'),"")}
+$("soundBtn").onclick=()=>{P.sound=!soundOn();saveProfile();renderSound();play("tap")};
+// leises Klicken bei Knöpfen; Antworten klingen über richtig oder falsch
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(b&&!b.disabled&&!b.classList.contains("opt")&&b.id!=="soundBtn"&&!b.closest("#tf"))play("tap")});
 $("paths").onclick=e=>{const b=e.target.closest("[data-p]");if(b&&!b.disabled){S.path=b.dataset.p;if(S.path!=="race")S.kind=S.path;renderSetup();show("setup")}};
 $("tabs").onclick=e=>{const b=e.target.closest("[data-tab]");if(!b)return;if(b.dataset.tab==="pass"){renderPass();show("pass")}else goHome()};
 
@@ -252,6 +290,7 @@ function answer(ok,code,picked){
     if(gain>0){xp+=20;G.newStars++;if(s===3){xp+=50;G.mastered++}}
     G.xp+=xp;if(addXp(xp))G.goal=true;
   }else{G.streak=0;G.missed.push(G.list[G.i])}
+  play(!ok?"bad":gain>0?"star":"ok");
   hud();
   document.querySelectorAll(".opt").forEach(b=>{b.disabled=true;if(b.dataset.c===code)b.classList.add("ok");else if(b.dataset.c===picked)b.classList.add("bad")});
   const ti=$("ti");if(ti)ti.disabled=true;
@@ -299,6 +338,7 @@ function finish(){
   if(p===100&&n>=10){G.xp+=30;if(addXp(30))G.goal=true}
   const st=newStamps();st.forEach(()=>{G.xp+=STAMP_XP;if(addXp(STAMP_XP))G.goal=true});
   const L=levelOf(P.xp),a=xpFor(L),b=xpFor(L+1);
+  play(L>G.level||G.goal?"big":"end");if(st.length)play("stamp",L>G.level||G.goal?2200:1100);
   const extra=[G.newStars?`${G.newStars} neue${G.newStars===1?"r":""} Stern${G.newStars===1?"":"e"}`:"",G.mastered?`${G.mastered} gemeistert`:"",p===100&&n>=10?"Bonus für die perfekte Runde":""].filter(Boolean).join(" · ");
   const seen=new Set(),miss=G.missed.filter(it=>{const k=it.c+kindOf(it.m);if(seen.has(k))return false;seen.add(k);return true});
   $("result").innerHTML=`${race||`<div class="label">Ergebnis</div><div class="score">${G.right} / ${n}</div><p class="sub">${msg} Beste Serie: ${G.best}.</p>`}

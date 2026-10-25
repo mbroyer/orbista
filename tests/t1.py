@@ -49,6 +49,15 @@ async def main():
         await pg.screenshot(path=W + 't1_willkommen.png')
         await pg.click('#wTopics [data-t="both"]'); await pg.click('#wGoals [data-g="20"]'); await pg.click('#begin')
         P = await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))"); assert P['topic'] == 'both' and P['goalQ'] == 20 and 'goal' not in P, P
+        # erster Start geht direkt in die erste Runde (neue Karten aus Europa), danach Startseite
+        assert await pg.is_visible('#game') and await pg.is_hidden('#home') and await pg.is_hidden('#tabs')
+        # Stummschalter auch im Quiz, gilt überall
+        await pg.click('#game .sndbtn'); assert await pg.get_attribute('#soundBtn', 'aria-pressed') == 'false'
+        await pg.click('#game .sndbtn'); assert await pg.get_attribute('#game .sndbtn', 'aria-pressed') == 'true'
+        modes, score = await runde(pg); print('erste Runde', sorted(modes), score)
+        assert score == '10 / 10', score  # DE und FR haben 2 Sterne, dort wird getippt
+        assert await pg.is_visible('#result .sndbtn')
+        await pg.click('#homeBtn')
         paths = await pg.inner_text('#paths'); print(paths.splitlines()[:2])
         assert '2 von 197 gekonnt' in paths, paths
         assert await pg.is_visible('#madeby') and await pg.is_visible('#tabs')
@@ -65,7 +74,7 @@ async def main():
         sub = await pg.inner_text('#goSub'); assert 'Europa' in sub, sub
         await pg.click('#go'); assert await pg.is_hidden('#madeby') and await pg.is_hidden('#tabs')
         modes, score = await runde(pg); print('weiter', sorted(modes), score)
-        assert score == '10 / 10', score  # DE und FR haben 2 Sterne, dort wird getippt
+        assert score == '10 / 10', score
         await pg.click('#homeBtn')
 
         for path in ('f', 'c'):

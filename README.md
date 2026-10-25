@@ -2,7 +2,7 @@
 
 Länder-Quiz mit 197 Ländern und ihren Hauptstädten, komplett auf Deutsch. Privates Projekt von A Simple Man's Lab. Spielkonzept 2.0 (Hauptstädte, Weltreise, Gamification): https://claude.ai/artifact/UEUFjDKwakqbrAUHwzZ6R5
 
-Beim ersten Start wählt man das Thema (Flaggen, Hauptstädte oder beides) und ein Tagesziel. Danach führt die Startseite: Ein Knopf „Weiterreisen“ stellt die nächste Runde selbst zusammen (fällige Karten zuerst, dann Neues aus der nächsten Region, ab zwei Sternen wird getippt). Darunter lässt sich gezielt üben: Flaggen, Hauptstädte oder Zeitrennen, jeweils nur Region und „Auswählen“ oder „Eintippen“. Runden haben 10 Fragen. Jede Karte (Flagge, Hauptstadt) sammelt bis zu drei Sterne und kommt nach Fälligkeit wieder dran. Dazu XP, Level, Tagesziel, Serie, ab Level 2 das Zeitrennen mit Bestzeiten und einen Reisepass mit Stempeln pro Region. Der Fortschritt liegt im Browser (localStorage).
+Beim ersten Start wählt man das Thema (Flaggen, Hauptstädte oder beides) und ein Tagesziel. Danach führt die Startseite: Ein Knopf „Weiterreisen“ stellt die nächste Runde selbst zusammen (fällige Karten zuerst, dann Neues aus der nächsten Region, ab zwei Sternen wird getippt). Darunter lässt sich gezielt üben: Flaggen, Hauptstädte oder Zeitrennen, jeweils nur Region und „Auswählen“ oder „Eintippen“. Runden haben 10 Fragen. Jede Karte (Flagge, Hauptstadt) sammelt bis zu drei Sterne und kommt nach Fälligkeit wieder dran. Dazu XP, Level, Tagesziel, Serie, ab Level 2 das Zeitrennen mit Bestzeiten und einen Reisepass mit Stempeln pro Region. Dazu leise Marimba-Klänge (im Browser erzeugt, abschaltbar). Der Fortschritt liegt im Browser (localStorage).
 
 ## Bauen und veröffentlichen
 

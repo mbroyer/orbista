@@ -55,6 +55,11 @@ async def main():
         assert await pg.evaluate('document.documentElement.scrollWidth<=innerWidth'), 'Querscrollen'
         assert await pg.evaluate("[...document.images].every(i=>i.complete&&i.naturalWidth>0)"), 'Bild fehlt'
         await pg.screenshot(path=W + 't1_start.png', full_page=True)
+        # Klänge an, Stummschalter merkt sich die Wahl
+        assert await pg.get_attribute('#soundBtn', 'aria-pressed') == 'true'
+        await pg.click('#soundBtn'); assert await pg.get_attribute('#soundBtn', 'aria-pressed') == 'false'
+        assert (await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))"))['sound'] is False
+        await pg.click('#soundBtn')
 
         # Weiterreisen bei „Beides“: neue Karten aus Europa, gemischt aus Flaggen- und Hauptstadtfragen
         sub = await pg.inner_text('#goSub'); assert 'Europa' in sub, sub

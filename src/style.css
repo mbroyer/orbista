@@ -158,6 +158,9 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .mapbox .hi{fill:var(--gold);stroke:var(--ink);stroke-width:1.8;stroke-dasharray:none}
 .mapbox .ok{fill:var(--ok-bg);stroke:var(--ok);stroke-width:2.2;stroke-dasharray:none}
 .mapbox .bad{fill:var(--bad-bg);stroke:var(--bad);stroke-width:2.2;stroke-dasharray:none}
+.mapbox .arrow{pointer-events:none}
+.mapbox .arrow circle{fill:none;stroke:var(--ink);stroke-width:2}
+.mapbox .arrow path{fill:var(--ink);stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .mapbox .zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:8px}
 .mapbox .zoom button{width:40px;height:40px;border:2px solid var(--ink);border-radius:8px;background:var(--card);box-shadow:2px 2px 0 var(--ink);font-size:1.25rem;font-weight:600;line-height:1;padding:0}
 .mapbox .zoom button:active{transform:translate(2px,2px);box-shadow:none}

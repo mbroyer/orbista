@@ -1,4 +1,4 @@
-# Playwright: Landkarte („Wo liegt …?“ mit echten Klicks, markiertes Land, Zoom, Verschieben), eigene Karte orbista.map, Reisepass, Desktop
+# Playwright: Landkarte („Wo liegt …?“ mit echten Klicks, markiertes Land mit Pfeil statt Zoom, Verschieben), eigene Karte orbista.map, Reisepass, Desktop
 import asyncio, os, json
 from playwright.async_api import async_playwright
 W = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/'
@@ -53,6 +53,10 @@ async def main():
                     assert 'Das war' in await pg.inner_text('#fb'); wrong = True
             else:
                 assert q['m'] == 'mark' and await pg.locator('#map .hi[data-c="%s"]' % q['c']).count() >= 1
+                # kein Zoom von selbst: immer ganz Europa; kleine Länder bekommen einen Pfeil
+                assert await pg.get_attribute('#map svg', 'viewBox') == ' '.join(map(str, await pg.evaluate("ORBISTA_MAP.view.Europa"))), q
+                small = await pg.evaluate("c => ORBISTA_MAP.box[c][2] < 24 * ORBISTA_MAP.view.Europa[2] / document.querySelector('#map svg').clientWidth", q['c'])
+                assert await pg.is_visible('#map .arrow') == small, (q, small)
                 await pg.click('.opt[data-c="%s"]' % q['c'])
                 assert await pg.locator('#map .ok[data-c="%s"]' % q['c']).count() >= 1
             if i == 0: await pg.screenshot(path=W + 't6_frage.png')

@@ -1,19 +1,28 @@
-# Playwright bei 390 px: alle drei Spielarten einmal durchspielen, Übernahme des Flaggo-Stands, kein Querscrollen
+# Playwright bei 390 px: alle Spielarten aller Themen einmal durchspielen, Hauptstädte richtig tippen, Übernahme des Flaggo-Stands, kein Querscrollen
 import asyncio, os, json
 from playwright.async_api import async_playwright
 W = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/'
 
-async def runde(pg, mode):
+# Kürzel der gezeigten Flagge, daraus die Hauptstadt (klein und ohne Akzente getippt, prüft die Schreibweisen-Toleranz)
+CAP_JS = """() => { const src = document.querySelector('#q img.flag').src;
+  const code = Object.keys(ORBISTA_FLAGS).find(k => ORBISTA_FLAGS[k] === src);
+  return ORBISTA_DATA.CAPITAL[code].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }"""
+
+async def runde(pg, topic, mode, richtig=False):
+    await pg.click('[data-t="%s"]' % topic)
     await pg.click('[data-m="%s"]' % mode)
     await pg.click('[data-r="Europa"]'); await pg.click('[data-l="10"]'); await pg.click('#go')
     for i in range(10):
-        if mode == 'type':
+        if richtig:
+            await pg.fill('#ti', await pg.evaluate(CAP_JS)); await pg.click('#tf button[type=submit]')
+        elif mode.endswith('type'):
             await pg.fill('#ti', 'Deutschland'); await pg.click('#tf button[type=submit]')
         else:
             await pg.click('.opt >> nth=0')
         await pg.click('#nx')
     assert await pg.is_visible('#result'), mode
-    print(mode, await pg.inner_text('#result .score'))
+    score = await pg.inner_text('#result .score'); print(topic, mode, score)
+    if richtig: assert score == '10 / 10', score
     await pg.click('#home')
 
 async def main():
@@ -31,8 +40,16 @@ async def main():
         assert await pg.evaluate('document.documentElement.scrollWidth<=innerWidth'), 'Querscrollen'
         assert await pg.evaluate("[...document.images].every(i=>i.complete&&i.naturalWidth>0)"), 'Bild fehlt'
         await pg.screenshot(path=W + 't1_start.png', full_page=True)
-        for m in ('f2l', 'l2f', 'type'):
-            await runde(pg, m)
+        for t, m in (('flag', 'f2l'), ('flag', 'l2f'), ('flag', 'type'), ('cap', 'l2c'), ('cap', 'c2l'),
+                     ('cap', 'ctype'), ('both', 'f2c'), ('both', 'fctype')):
+            await runde(pg, t, m)
+        await runde(pg, 'cap', 'ctype', richtig=True)
+        await runde(pg, 'both', 'fctype', richtig=True)
+        caps = await pg.evaluate("JSON.parse(localStorage.getItem('orbista.capitals'))")
+        assert sum(v['r'] for v in caps.values()) >= 20, caps
+        await pg.click('[data-t="cap"]')
+        assert (await pg.text_content('#mastTitle')) == 'Hauptstädte'
+        await pg.click('[data-t="flag"]')
         await pg.screenshot(path=W + 't1_ende.png', full_page=True)
         assert await pg.evaluate("!!localStorage.getItem('orbista.mastery')")
         assert not errs, errs

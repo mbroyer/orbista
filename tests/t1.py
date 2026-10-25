@@ -65,6 +65,11 @@ async def main():
         assert score == '10 / 10', score  # DE und FR haben 2 Sterne, dort wird getippt
         assert await pg.is_visible('#result .sndbtn')
         await pg.click('#homeBtn')
+        # Deine Welt: jedes Land hat Punkte, nach der ersten Runde leuchten neue Länder auf
+        assert await pg.evaluate("Object.keys(ORBISTA_DOTS.c).length") == 197
+        world = await pg.inner_text('#world'); print(world.replace('\n', ' | '))
+        assert 'Deine Welt' in world and 'Heute neu auf der Karte' in world, world
+        assert await pg.locator('#world .dots circle.s1').count() > 0 and await pg.locator('#world .dots circle.n').count() > 0
         paths = await pg.inner_text('#paths'); print(paths.splitlines()[:2])
         assert '2 von 197 gekonnt' in paths, paths
         assert await pg.is_visible('#madeby') and await pg.is_visible('#tabs')

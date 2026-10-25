@@ -12,7 +12,8 @@ python3 tests/t1.py                             # Playwright bei 390 px: erster 
 python3 tests/t2.py                             # Sterne, Fälligkeit, XP, Level, Tagesziel, Serie mit Ruhetag
 python3 tests/t3.py                             # Zeitrennen: Strafzeit, Bestzeit, Freischaltung
 python3 tests/t4.py                             # Reisepass: Sterne, Stempel, Bestzeiten
-python3 web/deploy.py ../mbroyer.github.io/orbista   # App für asimplemanslab.com/orbista
+python3 tests/t5.py                             # Anmeldung mit Reise-Code gegen nachgebauten Worker
+python3 web/deploy.py ../mbroyer.github.io/orbista https://orbista.….workers.dev   # Anmeldung + App für asimplemanslab.com/orbista
 ```
 
 Findet Playwright den Browser nicht, den Pfad zu Chromium in `PW_CHROMIUM` setzen.
@@ -25,5 +26,6 @@ Findet Playwright den Browser nicht, den Pfad zu Chromium in `PW_CHROMIUM` setze
 - `src/app.js` – Spiellogik, Fortschritt, Ansichten
 - `flags/` – 197 detaillierte SVG-Flaggen im Format 4:3 (Quelle: npm-Paket flag-icons 7.2.3, MIT-Lizenz in `flags/LICENSE-flag-icons`, mit svgo verkleinert)
 - `assets/` – Logo A Simple Man's Lab
-- `web/deploy.py` – legt die gebaute App ins Repo `mbroyer/mbroyer.github.io`, Ordner `orbista/`
+- `web/deploy.py` – legt Anmeldeseite (`index.html` aus `web/login.html`) und App (`app.html`) ins Repo `mbroyer/mbroyer.github.io`, Ordner `orbista/`
+- `cloudflare/` – Worker für Reise-Codes und Spielstand, mit Anleitung
 - `tests/` – Playwright-Skripte (Viewport 390 px)

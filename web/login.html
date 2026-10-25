@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Orbista</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Anmeldung im Stil „Atlas“ wie die App */
+:root{--bg:#f3eee3;--card:#fbf8f1;--ink:#1d2b3a;--muted:#5e6670;--line:#ddd3c0;--gold:#b5701c;--bad:#b03a2e;--contour:#d9cfbc;--logo-filter:none;
+  --f-display:"Young Serif",Georgia,serif;--f-body:"IBM Plex Sans",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111a24;--card:#18232f;--ink:#ede6d6;--muted:#a2a9b0;--line:#2c3a48;--gold:#e0a458;--bad:#f08a7e;--contour:#1f2b37;--logo-filter:brightness(0) invert(1);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111a24;--card:#18232f;--ink:#ede6d6;--muted:#a2a9b0;--line:#2c3a48;--gold:#e0a458;--bad:#f08a7e;--contour:#1f2b37;--logo-filter:brightness(0) invert(1);color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:17px/1.45 var(--f-body);display:flex;flex-direction:column;align-items:center;gap:36px;padding:48px 16px 40px;
+  background-image:repeating-radial-gradient(ellipse 140% 90% at 20% -10%,transparent 0 38px,var(--contour) 38px 39px);background-size:100% 320px;background-repeat:no-repeat}
+.card{width:100%;max-width:400px;background:var(--card);border:2px solid var(--ink);border-radius:14px;box-shadow:4px 4px 0 var(--ink);padding:24px 22px;display:flex;flex-direction:column;gap:14px}
+.brand{display:flex;align-items:center;gap:10px}
+.globe{width:34px;height:34px;fill:none;stroke:var(--ink);stroke-width:1.6}.globe .dot{fill:var(--gold);stroke:none}
+h1{font:400 2rem/1.1 var(--f-display);margin:0}
+h2{font:400 1.35rem/1.2 var(--f-display);margin:0}
+p{margin:0;color:var(--muted)}
+input{width:100%;font:600 1.25rem/1 var(--f-body);letter-spacing:.06em;padding:14px;border-radius:10px;border:2px solid var(--ink);background:var(--bg);color:var(--ink);text-align:center;text-transform:uppercase}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button,.ghost{font:inherit;color:var(--ink);cursor:pointer;background:var(--card);border:2px solid var(--ink);border-radius:10px;box-shadow:3px 3px 0 var(--ink);padding:13px 18px;font-weight:600;text-decoration:none;text-align:center}
+button:active,.ghost:active{transform:translate(3px,3px);box-shadow:none}
+button:disabled{opacity:.5;cursor:wait}
+#b{font:400 1.3rem/1.2 var(--f-display);padding:15px 18px;box-shadow:4px 4px 0 var(--ink)}
+.who{display:flex;flex-wrap:wrap;gap:10px}
+.who button{flex:1 1 auto;letter-spacing:.06em}
+.err{color:var(--bad);font-weight:600;min-height:1.4em}
+.small{font-size:.92rem}
+.small a{color:var(--ink);font-weight:600}
+.demo{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.demo small{color:var(--muted);font-size:.85rem}
+.madeby{display:flex;flex-direction:column;align-items:center;gap:8px;opacity:.75;text-decoration:none;margin-top:auto}
+.madeby img{width:58px;height:auto;display:block;filter:var(--logo-filter)}
+.madeby span{font-size:8px;line-height:1;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink)}
+</style>
+</head>
+<body>
+<form class="card" id="f" hidden>
+  <div class="brand"><svg class="globe" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg><h1>Orbista</h1></div>
+  <p>Flaggen und Hauptstädte der Welt, Runde für Runde.</p>
+  <h2 id="fh">Dein Reise-Code</h2>
+  <p id="fp">Gib den Code ein, den du von Mark bekommen hast. Mit dem Code ist dein Fortschritt auf jedem Gerät da.</p>
+  <div class="who" id="k" hidden></div>
+  <input id="c" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Reise-Code" placeholder="CODE">
+  <button id="b">Losreisen</button>
+  <div class="err" id="e" role="alert"></div>
+  <p class="small">Noch keinen Code? <a href="mailto:hello@asimplemanslab.com?subject=Reise-Code%20f%C3%BCr%20Orbista">Schreib Mark</a>, dann bekommst du einen.</p>
+</form>
+<div class="demo" id="d" hidden><a class="ghost" href="?demo">Ohne Code ausprobieren</a><small>Nichts wird gespeichert.</small></div>
+<a class="madeby" id="mb" href="/" hidden><span>Made with love by</span><img src="/logo.png" alt="A Simple Man’s Lab" width="320" height="354"></a>
+<div class="card" id="w"><h1>Orbista</h1><p>Lädt …</p></div>
+<script>
+(function(){
+  // Anmeldung mit Reise-Code wie bei NumNum: der Cloudflare-Worker prüft den Code und hält den Spielstand pro Code.
+  // Die App speichert in drei Schlüsseln; mit Code liegen sie unter „Schlüssel@CODE“ und werden zusammen hochgeladen.
+  var WORKER="__WORKER__",APP="app.html",STORE='orbista-code',LIST='orbista-codes',TAKEN='orbista-alt-uebernommen',
+      KEYS=['orbista.profile','orbista.mastery','orbista.capitals'],OLD='flaggo.mastery';
+  var f=document.getElementById('f'),c=document.getElementById('c'),b=document.getElementById('b'),e=document.getElementById('e'),w=document.getElementById('w'),k=document.getElementById('k');
+  function norm(x){return String(x||'').toUpperCase().replace(/[^A-Z0-9-]/g,'');}
+  function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(_){return null;}}
+  // Alle Codes, die auf diesem Gerät schon gespielt haben (z. B. zwei Leute auf einem iPad), zuletzt genutzter zuerst.
+  function known(){var a;try{a=JSON.parse(ls(LIST)||'[]');}catch(_){a=[];}if(!Array.isArray(a))a=[];a=a.map(norm).filter(function(x){return x.length>=4;});var s=norm(ls(STORE));if(s&&a.indexOf(s)<0)a.unshift(s);return a;}
+  function remember(code){ls(LIST,JSON.stringify([code].concat(known().filter(function(x){return x!==code;})).slice(0,6)));}
+  function forget(code){ls(LIST,JSON.stringify(known().filter(function(x){return x!==code;})));}
+  function pick(){
+    var a=known();k.textContent='';k.hidden=!a.length;
+    document.getElementById('fh').textContent=a.length?'Wer reist?':'Dein Reise-Code';
+    document.getElementById('fp').textContent=a.length?'Tippe auf deinen Code oder gib unten einen neuen ein.':'Gib den Code ein, den du von Mark bekommen hast. Mit dem Code ist dein Fortschritt auf jedem Gerät da.';
+    a.forEach(function(code){var x=document.createElement('button');x.type='button';x.textContent=code;
+      x.addEventListener('click',function(){k.querySelectorAll('button').forEach(function(y){y.disabled=true;});b.disabled=true;e.textContent='';start(code,true).catch(fail);});
+      k.appendChild(x);});
+    return a.length;
+  }
+  function ask(msg){var n=pick();w.hidden=true;f.hidden=false;document.getElementById('d').hidden=!!n;
+    document.getElementById('mb').hidden=false;e.textContent=msg||'';b.disabled=false;if(msg&&!k.childNodes.length)c.focus();}
+  function fail(err){var m={code:'Diesen Reise-Code gibt es nicht.',net:'Keine Verbindung. Bitte später nochmal versuchen.'};ask(m[err&&err.message]||'Das hat nicht geklappt. Bitte nochmal versuchen.');}
+  function remote(code){
+    return fetch(WORKER+'/stand/'+encodeURIComponent(code),{cache:'no-store'}).then(function(r){
+      if(r.status===403)throw new Error('code');
+      if(r.status===404)return null;
+      if(!r.ok)throw new Error('net');
+      return r.json();
+    },function(){throw new Error('net');});
+  }
+  function launch(code,rem){
+    var TK='orbista-ts@'+code,lts=+ls(TK)||0,rts=rem&&+rem.ts||0,mine=function(k){return k+'@'+code;};
+    var has=function(){return KEYS.some(function(x){return ls(mine(x));});};
+    if(rem&&rem.state&&rts>lts){KEYS.forEach(function(x){var v=rem.state[x];ls(mine(x),v?JSON.stringify(v):null);});ls(TK,String(rts));lts=rts;}
+    else if(!rem&&!has()&&!ls(TAKEN)&&(ls(KEYS[0])||ls(KEYS[1])||ls(OLD))){ // bisherigen Stand dieses Geräts einmal übernehmen
+      KEYS.forEach(function(x){var v=ls(x)||(x===KEYS[1]?ls(OLD):null);if(v)ls(mine(x),v);});ls(TAKEN,code);lts=Date.now();ls(TK,String(lts));}
+    ls(STORE,code);remember(code);
+    return fetch(APP).then(function(r){if(!r.ok)throw new Error('net');return r.text();},function(){throw new Error('net');}).then(function(html){
+      var cfg=JSON.stringify({w:WORKER,c:code,keys:KEYS,old:OLD,tk:TK,push:lts>rts&&has()});
+      // Hochladen beim Verlassen der App und sonst höchstens alle 5 min. Lokal speichert die App weiter nach jeder Antwort.
+      // So bleibt Orbista weit unter dem täglichen Schreiblimit von Workers KV.
+      var shim='<script>(function(C){var S=Storage.prototype,g=S.getItem,st=S.setItem,rm=S.removeItem,t=null,mt=null,busy=false,again=false,L=window.localStorage;'+
+        'function map(s,k){return s===L&&(C.keys.indexOf(k)>=0||k===C.old)?k+"@"+C.c:k;}'+
+        'function all(){var o={},n=0;C.keys.forEach(function(k){var v=g.call(L,k+"@"+C.c);if(v){try{o[k]=JSON.parse(v);n++;}catch(_){}}});return o["orbista.profile"]?o:null;}'+
+        'var last=C.push?null:JSON.stringify(all());'+
+        'function stop(){clearTimeout(t);clearTimeout(mt);t=mt=null;}'+
+        'function push(leaving){stop();var o=all(),v=JSON.stringify(o);if(!o||v===last)return;if(busy){again=true;return;}var b=JSON.stringify({state:o,ts:+g.call(L,C.tk)||Date.now()});busy=true;'+
+          'fetch(C.w+"/stand/"+encodeURIComponent(C.c),{method:"PUT",headers:{"Content-Type":"application/json"},body:b,keepalive:!!leaving&&b.length<60000}).then(function(r){if(!r.ok&&r.status!==409)throw 0;last=v;},function(){throw 0;})'+
+          '.catch(function(){if(!t)t=setTimeout(push,60000);}).then(function(){busy=false;if(again){again=false;later();}});}'+
+        'function later(){if(!mt)mt=setTimeout(push,300000);}'+
+        'S.getItem=function(k){return g.call(this,map(this,k));};'+
+        'S.removeItem=function(k){return rm.call(this,map(this,k));};'+
+        'S.setItem=function(k,v){var m=map(this,k);st.call(this,m,v);if(m!==k){st.call(this,C.tk,String(Date.now()));later();}};'+
+        'function pending(){return t||mt||JSON.stringify(all())!==last;}'+
+        'addEventListener("pagehide",function(){if(pending())push(true);});'+
+        'document.addEventListener("visibilitychange",function(){if(document.hidden&&pending())push(true);});'+
+        'addEventListener("online",function(){if(pending())push();});'+
+        'if(C.push)push();})('+cfg+');<\/script>';
+      html=html.replace('<head>','<head>\n'+shim);
+      document.open();document.write(html);document.close();
+    });
+  }
+  function start(code,saved){
+    return remote(code).then(function(rem){return launch(code,rem);},function(err){
+      if(saved&&err.message==='net'&&ls('orbista.profile@'+code))return launch(code,null); // offline weiterspielen, Abgleich beim nächsten Speichern
+      if(saved&&err.message==='code'){ls(STORE,null);forget(code);throw new Error('code');}
+      throw err;
+    });
+  }
+  f.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    var code=norm(c.value);
+    if(code.length<4){ask('Bitte den Reise-Code eingeben.');return;}
+    b.disabled=true;e.textContent='';
+    start(code,false).catch(fail);
+  });
+  // Demo: die App ohne Code. Speicher nur im Arbeitsspeicher, kein Abgleich mit dem Worker.
+  function demo(){
+    var shim='<script>(function(){var m=Object.create(null),S=Storage.prototype,g=S.getItem,st=S.setItem,rm=S.removeItem,cl=S.clear,L;try{L=window.localStorage;}catch(_){}'+
+      'function d(s){return s===L;}'+
+      'S.getItem=function(k){return d(this)?(k in m?m[k]:null):g.call(this,k);};'+
+      'S.setItem=function(k,v){if(d(this))m[k]=String(v);else st.call(this,k,v);};'+
+      'S.removeItem=function(k){if(d(this))delete m[k];else rm.call(this,k);};'+
+      'S.clear=function(){if(d(this))m=Object.create(null);else cl.call(this);};'+
+      'document.addEventListener("DOMContentLoaded",function(){var a=document.createElement("div");a.id="demoHint";a.textContent="Demo: Nichts wird gespeichert";'+
+      'a.style.cssText="position:fixed;z-index:2147483647;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top));padding:9px 16px;border-radius:999px;background:rgba(29,43,58,.88);color:#fff;font:600 14px/1 system-ui,sans-serif;white-space:nowrap;pointer-events:none;transition:opacity .6s";'+
+      'document.body.appendChild(a);setTimeout(function(){a.style.opacity="0";setTimeout(function(){a.remove();},700);},4000);});})();<\/script>';
+    return fetch(APP).then(function(r){if(!r.ok)throw new Error('net');return r.text();}).then(function(html){
+      html=html.replace('<head>','<head>\n'+shim);
+      document.open();document.write(html);document.close();
+    });
+  }
+  var q=new URLSearchParams(location.search),fromUrl=norm(q.get('code'));
+  if(q.has('demo')){demo().catch(function(){ask('Die Demo konnte nicht geladen werden.');});return;}
+  if(q.has('wechseln'))ls(STORE,null);
+  if(q.has('wechseln')||fromUrl)history.replaceState(null,'',location.pathname);
+  var saved=fromUrl||norm(ls(STORE));
+  if(saved&&(fromUrl||known().length<2))start(saved,!fromUrl).catch(function(err){c.value=saved;fail(err);});
+  else ask();
+})();
+</script>
+</body>
+</html>

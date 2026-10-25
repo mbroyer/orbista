@@ -39,7 +39,7 @@ async def main():
         assert P['xp'] == 400 and P['streak'] == 1 and P['goalDay'] == T, P
         txt = await pg.inner_text('#result'); assert 'XP' not in txt and 'Level' not in txt and 'Tagesziel geschafft' in txt and '10 neue Sterne' in txt, txt
         M = await get(pg, 'orbista.mastery'); assert len(M) == 10 and all(m['s'] == 1 and m['due'] == T + 1 for m in M.values()), M
-        await pg.click('#homeBtn'); home = await pg.inner_text('#home'); assert 'Level' not in home and 'XP' not in home and '0 von 12 Visa' in home, home
+        await pg.click('#homeBtn'); home = await pg.inner_text('#home'); assert 'Level' not in home and 'XP' not in home and '0 von 18 Visa' in home, home
         await pg.screenshot(path=W + 't2_start.png', full_page=True)
         assert not errs, errs
 

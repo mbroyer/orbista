@@ -14,7 +14,8 @@ Privates Lernspiel (Flaggen und Hauptstädte), gleiche Linie wie die anderen Ler
 - Zeitrennen (Spielform, ab Level 2): Rennzeit = Summe der Antwortzeiten + 5 s je Fehler, die Lösungsanzeige zählt nicht. Bestzeiten in `orbista.profile` unter `best`, Schlüssel `Spielart|Region|Länge` (Spielart f2l, l2c, type oder ctype). Neue Bestzeit +30 XP. „Fehler nochmal üben“ läuft immer als Übung.
 - Reisepass (untere Leiste): alle Länder nach Region mit Sternen, umschaltbar Flaggen/Hauptstädte, Stempel und Bestzeiten. Ein Stempel pro Region und Karte (Flaggen, Hauptstädte), sobald alle Karten der Region 2 Sterne haben. Vergeben am Ende einer Runde, einmalig, +100 XP, gespeichert in `orbista.profile` unter `stamps` (`Region|f` bzw. `Region|c`).
 - Klänge „Holz“ (von Mark gewählt, Hörprobe: https://claude.ai/artifact/K6FfHaDWhkN4xRjfkb73FL): Marimba-Töne per Web Audio, keine Audiodateien (`SFX` in `src/app.js`). Antippen, Richtig, Falsch, Neuer Stern, Rundenende (länger bei Level oder Tagesziel), Stempel. Lautsprecher-Knopf oben auf der Startseite, gemerkt in `orbista.profile` unter `sound`.
-- Nach Änderungen `python3 build.py` und `python3 tests/t1.py` bis `t4.py`.
+- Spielstand absichern (ohne Konto): `navigator.storage.persist()`, auf iPhone/iPad ein abschaltbarer Hinweis „Zum Home-Bildschirm“ (Safari löscht Website-Daten nach 7 Tagen ohne Besuch, `P.hintHome`), im Reisepass Sichern/Wiederherstellen per Textcode `ORBISTA1:` + Base64 von `{f, c, p}`.
+- Nach Änderungen `python3 build.py` und `python3 tests/t1.py` bis `t5.py`.
 
 ## Nächste Schritte (Spielkonzept 2.0)
 Konzept: https://claude.ai/artifact/UEUFjDKwakqbrAUHwzZ6R5

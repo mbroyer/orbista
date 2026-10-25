@@ -164,12 +164,29 @@ function autoPlan(){
   return {region,due:Math.min(due.length,ROUND),items:list.map(([k,c])=>({c,m:modeFor(k,c,null,ks.length>1)}))};
 }
 
+
+// Spielstand absichern: Browser um dauerhafte Speicherung bitten; auf iPhone und iPad ein Hinweis auf den Home-Bildschirm,
+// weil Safari Website-Daten sonst nach 7 Tagen ohne Besuch löscht; im Reisepass Sichern und Wiederherstellen per Textcode
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{})}catch(e){}
+const standalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(e){return false}};
+const touchApple=()=>/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)&&"ontouchend" in document;
+function renderHint(){$("homeHint").hidden=!!P.hintHome||standalone()||!touchApple()}
+$("hintOk").onclick=()=>{P.hintHome=1;saveProfile();renderHint()};
+const CODE_PREFIX="ORBISTA1:";
+const exportCode=()=>CODE_PREFIX+btoa(unescape(encodeURIComponent(JSON.stringify({f:M.f,c:M.c,p:P}))));
+function importCode(t){
+  try{const m=t.replace(/\s+/g,"").match(/^ORBISTA1:([A-Za-z0-9+/=]+)$/);if(!m)return false;
+    const d=JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+    if(!d||typeof d.f!=="object"||typeof d.c!=="object"||typeof d.p!=="object")return false;
+    localStorage.setItem(KEYS.f,JSON.stringify(d.f));localStorage.setItem(KEYS.c,JSON.stringify(d.c));localStorage.setItem(PKEY,JSON.stringify(d.p));
+    return true}catch(e){return false}
+}
 // Startseite
 let plan=null;
 function renderHome(){
   const L=levelOf(P.xp),b=xpFor(L+1),dx=dayXp(),d=Math.min(dx,P.goal),sk=streakNow(),r=28,u=2*Math.PI*r,left=P.goal-dx;
   $("lvlPill").textContent=`Level ${L} · ${titleOf(L)}`;
-  renderSound();
+  renderSound();renderHint();
   $("status").innerHTML=`<button class="goal" id="goalBtn" aria-label="Tagesziel ${dx} von ${P.goal} XP, antippen zum Ändern"><svg viewBox="0 0 68 68" aria-hidden="true"><circle cx="34" cy="34" r="${r}" class="ring0"/><circle cx="34" cy="34" r="${r}" class="ring1" stroke-dasharray="${u*d/P.goal} ${u}"/></svg><b>${dx}</b></button>
   <div class="todaytxt"><b>Deine Reise heute</b><span>${left>0?`${dx} von ${P.goal} XP · noch ${left} bis zum Tagesziel`:`Tagesziel geschafft · ${dx} XP`}</span><span class="streak">Serie: <b>${sk}</b> ${sk===1?"Tag":"Tage"} · ${b-P.xp} XP bis Level ${L+1}</span></div>`;
   plan=autoPlan();
@@ -384,9 +401,27 @@ function renderPass(){
     return `<div class="label">${r} · ★ ${got} von ${3*list.length}</div><div class="tiles">${list.map(c=>{const n=stars(passKind,c);
       return `<div class="tile${n?"":" grey"}" data-c="${c}"><img src="${flag(c)}" alt=""><b>${C[c].name}</b>${passKind==="c"?`<span>${n?C[c].cap:"?"}</span>`:""}<i aria-label="${n} von 3 Sternen">${starStr(n)}</i></div>`}).join("")}</div>`}).join("")}
   <div class="label">Bestzeiten im Zeitrennen</div>
-  ${best.length?`<div class="besttimes">${best.map(([key,ms])=>{const [m,r,l]=key.split("|");return `<div><span>${MODE_NAME[m]||m} · ${regionName(r)} · ${+l?l+" Fragen":"alle"}</span><b>${fmt(ms)}</b></div>`}).join("")}</div>`:`<p class="muted race">Noch keine Bestzeiten. Das Zeitrennen gibt es ab Level ${RACE_LEVEL}.</p>`}`;
+  ${best.length?`<div class="besttimes">${best.map(([key,ms])=>{const [m,r,l]=key.split("|");return `<div><span>${MODE_NAME[m]||m} · ${regionName(r)} · ${+l?l+" Fragen":"alle"}</span><b>${fmt(ms)}</b></div>`}).join("")}</div>`:`<p class="muted race">Noch keine Bestzeiten. Das Zeitrennen gibt es ab Level ${RACE_LEVEL}.</p>`}
+  <div class="label">Spielstand sichern</div>
+  <p class="muted race">Dein Fortschritt liegt nur in diesem Browser. Mit dem Code kannst du ihn sichern oder auf ein anderes Gerät mitnehmen.</p>
+  <button class="btn ghost" id="copyCode">Code kopieren</button>
+  <label class="label" for="codeIn">Code von einem anderen Gerät einfügen</label>
+  <textarea class="codein" id="codeIn" rows="3" spellcheck="false" autocapitalize="off" placeholder="ORBISTA1:…"></textarea>
+  <button class="btn ghost" id="restore">Wiederherstellen</button>
+  <p class="muted race" id="saveMsg" aria-live="polite"></p>`;
 }
-$("pass").onclick=e=>{const k=e.target.closest("[data-k]");if(k){passKind=k.dataset.k;renderPass()}};
+let restoreArmed=false;
+$("pass").onclick=e=>{
+  const k=e.target.closest("[data-k]");if(k){passKind=k.dataset.k;renderPass();return}
+  const msg=t=>$("saveMsg").textContent=t;
+  if(e.target.id==="copyCode"){const c=exportCode(),box=$("codeIn");
+    const manual=()=>{box.value=c;box.focus();box.select();msg("Der Code steht im Feld. Markieren, kopieren und gut aufheben.")};
+    try{navigator.clipboard.writeText(c).then(()=>msg("Code kopiert. Heb ihn gut auf, zum Beispiel in einer Notiz."),manual)}catch(err){manual()}}
+  if(e.target.id==="restore"){const t=$("codeIn").value;
+    if(!t.trim().startsWith(CODE_PREFIX)){msg("Das ist kein Orbista-Code. Er beginnt mit ORBISTA1:");return}
+    if(!restoreArmed){restoreArmed=true;e.target.textContent="Ja, jetzigen Stand ersetzen";msg("Achtung: Der Fortschritt auf diesem Gerät wird durch den Code ersetzt.");return}
+    if(importCode(t)){msg("Wiederhergestellt. Orbista lädt neu.");setTimeout(()=>location.reload(),600)}else{restoreArmed=false;e.target.textContent="Wiederherstellen";msg("Der Code ist unvollständig oder beschädigt.")}}
+};
 
 if(P.topic)goHome();else openWelcome();
 })();

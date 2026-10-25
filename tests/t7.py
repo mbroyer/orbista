@@ -27,6 +27,15 @@ async def main():
             await pg.click('[data-tab="home"]'); await pg.click('#go')
             await pg.click('.opt >> nth=0'); nx = await pg.evaluate("getComputedStyle(document.getElementById('nx')).backgroundColor"); assert nx == 'rgb(229, 138, 51)', nx
             await pg.screenshot(path=W + 't7_frage_%d.png' % w)
+            # Umschalter auf jeder Seite sichtbar: Frage, Ergebnis, Gezielt üben, Erststart
+            assert await pg.is_visible('#game .themebtn')
+            await pg.click('#nx')
+            for i in range(9):
+                await pg.click('.opt >> nth=0') if await pg.is_visible('.opt >> nth=0') else await pg.click('#skip')
+                await pg.click('#nx')
+            assert await pg.is_visible('#result .themebtn')
+            await pg.click('#homeBtn'); await pg.click('[data-p="f"]'); assert await pg.is_visible('#setup .themebtn')
+            await pg.evaluate("localStorage.removeItem('orbista.profile')"); await pg.reload(); assert await pg.is_visible('#welcome .themebtn')
             assert not errs, errs
             await ctx.close()
         await b.close()

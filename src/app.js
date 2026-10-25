@@ -220,7 +220,7 @@ const sndBtn=()=>`<button class="iconbtn sndbtn"></button>`;
 function renderSound(){const on=soundOn();document.querySelectorAll(".sndbtn").forEach(b=>{b.setAttribute("aria-pressed",String(on));b.setAttribute("aria-label",on?"Klänge ausschalten":"Klänge einschalten");
   b.innerHTML=svg(SPK+(on?'<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>':'<path d="M16 9l5 6M21 9l-5 6"/>'),"")})}
 document.addEventListener("click",e=>{if(e.target.closest(".sndbtn")){P.sound=!soundOn();saveProfile();renderSound();play("tap")}});
-// Hell/Dunkel-Umschalter (Startseite, Reisepass): Standard hell, nur auf diesem Gerät gemerkt (orbista.theme, nicht im Reise-Code)
+// Hell/Dunkel-Umschalter auf jeder Seite neben dem Lautsprecher (im Erststart allein): Standard hell, nur auf diesem Gerät gemerkt (orbista.theme, nicht im Reise-Code)
 const themeBtn=()=>`<button class="iconbtn themebtn"></button>`;
 const isDark=()=>document.documentElement.dataset.theme==="dark";
 function renderTheme(){const d=isDark();document.querySelectorAll(".themebtn").forEach(b=>{b.setAttribute("aria-pressed",String(d));b.setAttribute("aria-label",d?"Hellen Modus einschalten":"Dunklen Modus einschalten");
@@ -440,7 +440,7 @@ function finish(){
   play(G.goal?"big":"end");if(st.length)play("stamp",G.goal?2200:1100);
   const extra=[G.newStars?`${G.newStars} neue${G.newStars===1?"r":""} Stern${G.newStars===1?"":"e"}`:"",G.mastered?`${G.mastered} gemeistert`:"",p===100&&n>=10?"Perfekte Runde":""].filter(Boolean).join(" · ");
   const seen=new Set(),miss=G.missed.filter(it=>{const k=it.c+kindOf(it.m);if(seen.has(k))return false;seen.add(k);return true});
-  $("result").innerHTML=`<div class="sndrow"><span></span>${sndBtn()}</div>${race||`<div class="label">Ergebnis</div><div class="score">${G.right} / ${n}</div><p class="sub">${msg} Beste Serie: ${G.best}.</p>`}
+  $("result").innerHTML=`<div class="sndrow"><span></span><span class="topr">${themeBtn()}${sndBtn()}</span></div>${race||`<div class="label">Ergebnis</div><div class="score">${G.right} / ${n}</div><p class="sub">${msg} Beste Serie: ${G.best}.</p>`}
   ${extra?`<div class="gain"><span>${extra}</span></div>`:""}
   ${st.map(([r,k])=>`<div class="levelup stamp-new">Neues Visum im Reisepass: ${r} · ${KIND[k]}</div>`).join("")}
   ${G.goal?`<div class="levelup">Tagesziel geschafft · ${streakNow()} ${streakNow()===1?"Tag":"Tage"} Serie</div>`:""}
@@ -452,7 +452,7 @@ function finish(){
   if($("again"))$("again").onclick=()=>begin({items:shuffle(miss),restart:g.restart,next:g.next});
   $("new").onclick=()=>g.restart();
   $("homeBtn").onclick=()=>goHome();
-  renderSound();
+  renderSound();renderTheme();
 }
 
 // Reisepass: alle Länder nach Region mit Sternen, Stempel pro Region und Karte, Bestzeiten

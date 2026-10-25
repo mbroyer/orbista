@@ -67,6 +67,14 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-of
 .gain{display:flex;flex-direction:column;gap:2px}
 .gain b{font-family:var(--f-display);font-size:1.6rem;color:var(--sun)}
 .gain span{color:var(--muted)}
+.chip[disabled]{opacity:.5;cursor:default}
+.race{margin:0;font-size:.95rem}
+.times{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.times>div{border:2px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.times small{color:var(--muted);font-size:.78rem}
+.times b{font-family:var(--f-display);font-size:1.3rem;font-variant-numeric:tabular-nums}
+.times span{overflow-wrap:anywhere}
+.hud .stat{font-variant-numeric:tabular-nums}
 .levelup{border-radius:12px;padding:10px 14px;background:color-mix(in srgb,var(--sun) 18%,transparent);font-weight:700}
 .madeby{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:100%;margin:18px 0 8px;color:var(--ink);font-size:.6rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
 .madeby img{width:72px;height:auto;opacity:.9;filter:var(--logo-filter)}

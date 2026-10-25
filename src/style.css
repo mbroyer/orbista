@@ -276,15 +276,15 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
   #welcome .tri svg{width:30px;height:30px}
   #welcome #begin{align-self:flex-start;min-width:280px}
 
-  /* Startseite: links heute und Weiterreisen, rechts gezielt üben */
-  #home{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);column-gap:40px;row-gap:16px;align-content:start;
-    grid-template-areas:"top top" "today world" "lbl world" "paths world" "topic world" "made made"}
-  #home>#world{grid-area:world;align-self:start;padding:22px 22px 18px}
+  /* Startseite: oben Heute und Deine Welt gleich hoch nebeneinander, darunter Gezielt üben in zwei Spalten */
+  #home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:32px;row-gap:16px;align-content:start;
+    grid-template-areas:"top top" "today world" "lbl lbl" "paths paths" "topic topic" "made made"}
+  #home>#world{grid-area:world;padding:22px 22px 18px;justify-content:space-between}
   #home>.top{grid-area:top;margin-bottom:8px}
-  #home>.today{grid-area:today;align-self:start;padding:24px;gap:22px}
-  #home>.label{grid-area:lbl;align-self:end}
-  #home>#paths{grid-area:paths;align-self:start}
-  #home>#topicLine{grid-area:topic;align-self:start}
+  #home>.today{grid-area:today;padding:28px 24px;gap:22px;justify-content:space-between}
+  #home>.label{grid-area:lbl;margin-top:20px}
+  #home>#paths{grid-area:paths;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:32px}
+  #home>#topicLine{grid-area:topic}
   #home>#madeby{grid-area:made;padding-top:56px}
   .today .goal,.today .goal svg{width:84px;height:84px}
   .today .goal b{font-size:1.25rem}

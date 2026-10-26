@@ -144,9 +144,9 @@ let W={topic:"both",goal:10,start:"Europa"};
 function renderWelcome(){
   $("wTopics").innerHTML=TOPICS.map(([id,t,ic])=>`<button data-t="${id}" aria-pressed="${W.topic===id}">${svg(ic,"")}${t}</button>`).join("");
   $("wGoals").innerHTML=GOALS.map(([g,t,d,m])=>`<button class="line goalline" data-g="${g}" aria-pressed="${W.goal===g}"><span class="tx">${W.goal===g?svg(ICON.check,"check"):""}<b>${t}</b><small>${d}</small></span><small>etwa ${m}</small></button>`).join("");
-  $("wStart").innerHTML=ORDER.map(r=>`<button class="chip" data-r="${r}" aria-pressed="${W.start===r}">${r}</button>`).join("");
+  $("wStart").innerHTML=[...ORDER,"Alle"].map(r=>`<button class="chip" data-r="${r}" aria-pressed="${W.start===r}">${regionName(r)}</button>`).join("");
 }
-function openWelcome(){W={topic:P.topic||"both",goal:[5,10,20].includes(P.goalQ)?P.goalQ:10,start:ORDER.includes(P.start)?P.start:"Europa"};renderWelcome();show("welcome")}
+function openWelcome(){W={topic:P.topic||"both",goal:[5,10,20].includes(P.goalQ)?P.goalQ:10,start:ORDER.includes(P.start)||P.start==="Alle"?P.start:"Europa"};renderWelcome();show("welcome")}
 $("wTopics").onclick=e=>{const b=e.target.closest("[data-t]");if(b){W.topic=b.dataset.t;renderWelcome()}};
 $("wGoals").onclick=e=>{const b=e.target.closest("[data-g]");if(b){W.goal=+b.dataset.g;renderWelcome()}};
 $("wStart").onclick=e=>{const b=e.target.closest("[data-r]");if(b){W.start=b.dataset.r;renderWelcome()}};
@@ -154,7 +154,7 @@ $("wStart").onclick=e=>{const b=e.target.closest("[data-r]");if(b){W.start=b.dat
 $("begin").onclick=()=>{const first=!P.topic;P.topic=W.topic;P.goalQ=W.goal;P.start=W.start;saveProfile();if(first)startAuto();else goHome()};
 
 // Weiterreisen: Orbista stellt die Runde selbst zusammen. Zuerst fällige Karten (wenige Sterne vorn),
-// dann neue aus der ersten Region, die noch Unbekanntes hat (ab der gewählten Startregion `P.start`), dann die übrigen nach Fälligkeit.
+// dann neue aus der ersten Region, die noch Unbekanntes hat (ab der gewählten Startregion `P.start`; bei „Alle“ aus der ganzen Welt), dann die übrigen nach Fälligkeit.
 // Ab zwei Sternen wird getippt, vorher ausgewählt.
 function modeFor(k,c,typing,both){
   const t=typing===null?stars(k,c)>=2:typing;
@@ -167,7 +167,7 @@ function autoPlan(){
   for(const k of ks)for(const c of ALL)cards.push([k,c]);
   const due=shuffle(cards.filter(([k,c])=>isDue(k,c))).sort((a,b)=>stars(a[0],a[1])-stars(b[0],b[1]));
   const order=ORDER.includes(P.start)?[P.start,...ORDER.filter(r=>r!==P.start)]:ORDER;
-  const region=order.find(r=>ks.some(k=>poolOf(r).some(c=>!card(k,c))))||"Alle";
+  const region=P.start==="Alle"?"Alle":order.find(r=>ks.some(k=>poolOf(r).some(c=>!card(k,c))))||"Alle";
   const fresh=shuffle(cards.filter(([k,c])=>!card(k,c)&&(region==="Alle"||C[c].region===region)));
   const rest=cards.filter(([k,c])=>card(k,c)&&!isDue(k,c)).sort((a,b)=>card(a[0],a[1]).due-card(b[0],b[1]).due);
   const list=[...due,...fresh,...rest].slice(0,ROUND);
@@ -192,9 +192,8 @@ function renderHome(){
 }
 function goHome(){renderHome();show("home")}
 
-// Deine Welt: Punktkarte, jedes Land leuchtet auf, sobald es entdeckt ist (ein Stern), und wird gold, wenn es
-// in allen Karten des Themas gekonnt ist (zwei Sterne). Punkte aus src/dots.js (tools/dots.py).
-// Deine Welt zählt immer alle drei Karten, unabhängig vom Thema: Punkt heller je gekonnter Karte (p1, p2), gold bei allen drei (s2)
+// Deine Welt: Punktkarte (src/dots.js aus tools/dots.py). Zählt immer alle drei Karten, unabhängig vom Thema:
+// entdeckt ab einem Stern, heller je gekonnter Karte (p1, p2), gold bei allen drei (s2)
 function renderWorld(){
   const D=window.ORBISTA_DOTS,ks=KINDS,T=today(),cnt=[0,0,0,0],fresh=[];let got=0;
   const dots=Object.entries(D.c).map(([c,cells])=>{

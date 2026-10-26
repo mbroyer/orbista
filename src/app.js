@@ -194,18 +194,20 @@ function goHome(){renderHome();show("home")}
 
 // Deine Welt: Punktkarte, jedes Land leuchtet auf, sobald es entdeckt ist (ein Stern), und wird gold, wenn es
 // in allen Karten des Themas gekonnt ist (zwei Sterne). Punkte aus src/dots.js (tools/dots.py).
+// Deine Welt zählt immer alle drei Karten, unabhängig vom Thema: Punkt heller je gekonnter Karte (p1, p2), gold bei allen drei (s2)
 function renderWorld(){
-  const D=window.ORBISTA_DOTS,ks=kindsOf(P.topic||"both"),T=today(),cnt=[0,0,0],fresh=[];
+  const D=window.ORBISTA_DOTS,ks=KINDS,T=today(),cnt=[0,0,0,0],fresh=[];let got=0;
   const dots=Object.entries(D.c).map(([c,cells])=>{
-    const lv=ks.every(k=>stars(k,c)>=2)?2:ks.some(k=>stars(k,c)>=1)?1:0,isNew=lv>0&&ks.some(k=>{const m=card(k,c);return m&&m.d1===T});
-    cnt[lv]++;if(isNew)fresh.push(c);
-    return cells.map(i=>`<circle class="s${lv}${isNew?" n":""}" cx="${i%D.cols+.5}" cy="${Math.floor(i/D.cols)+.5}" r=".4"/>`).join("");
+    const g=ks.filter(k=>stars(k,c)>=2).length,seen=ks.some(k=>stars(k,c)>=1),cls=g===ks.length?"s2":g?"p"+g:seen?"s1":"s0";
+    const isNew=seen&&ks.some(k=>{const m=card(k,c);return m&&m.d1===T});
+    got+=g;cnt[g===ks.length?3:g?2:seen?1:0]++;if(isNew)fresh.push(c);
+    return cells.map(i=>`<circle class="${cls}${isNew?" n":""}" cx="${i%D.cols+.5}" cy="${Math.floor(i/D.cols)+.5}" r=".4"/>`).join("");
   }).join("");
-  const all=cnt[0]+cnt[1]+cnt[2],names=fresh.map(c=>C[c].name).sort((a,b)=>a.localeCompare(b,"de"));
+  const all=cnt.reduce((a,b)=>a+b),names=fresh.map(c=>C[c].name).sort((a,b)=>a.localeCompare(b,"de"));
   const list=names.length<=3?names.join(", ").replace(/, ([^,]*)$/," und $1"):`${names.slice(0,2).join(", ")} und ${names.length-2} weitere`;
-  $("world").innerHTML=`<div class="worldhead"><h2>Deine Welt</h2><b>${Math.round(100*cnt[2]/all)} %</b></div>
-  <svg class="dots" viewBox="0 0 ${D.cols} ${D.rows}" role="img" aria-label="Weltkarte: ${cnt[1]+cnt[2]} von ${all} Ländern entdeckt, ${cnt[2]} gekonnt">${dots}</svg>
-  <div class="worldkey"><span><i class="k2"></i>${cnt[2]} gekonnt</span><span><i class="k1"></i>${cnt[1]} entdeckt</span><span><i class="k0"></i>${cnt[0]} noch unbekannt</span></div>
+  $("world").innerHTML=`<div class="worldhead"><h2>Deine Welt</h2><b>${Math.round(100*got/(all*ks.length))} %</b></div>
+  <svg class="dots" viewBox="0 0 ${D.cols} ${D.rows}" role="img" aria-label="Weltkarte: ${all-cnt[0]} von ${all} Ländern entdeckt, ${cnt[3]} in allen Karten gekonnt">${dots}</svg>
+  <div class="worldkey"><span><i class="k2"></i>${cnt[3]} ganz gekonnt</span><span><i class="kp"></i>${cnt[2]} teils gekonnt</span><span><i class="k1"></i>${cnt[1]} entdeckt</span><span><i class="k0"></i>${cnt[0]} noch unbekannt</span></div>
   ${fresh.length?`<p class="worldnew"><b>Heute neu auf der Karte:</b> ${list}</p>`:""}`;
 }
 $("status").onclick=e=>{if(e.target.closest("#goalBtn")){P.goalQ=P.goalQ===5?10:P.goalQ===10?20:5;saveProfile();renderHome()}};

@@ -51,15 +51,17 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .worldhead b{font-family:var(--f-display);font-weight:400;font-size:1.35rem;color:var(--pass-gold)}
 .dots{width:100%;height:auto;display:block}
 .dots circle{fill:var(--pass-ink);opacity:.2}
-.dots .s1{opacity:.75}
+.dots .s1{opacity:.55}
 .dots .s2{fill:var(--pass-gold);opacity:1}
+.dots .p1{fill:var(--pass-gold);opacity:.5}
+.dots .p2{fill:var(--pass-gold);opacity:.78}
 .dots .n{transform-box:fill-box;transform-origin:center;animation:dotpop 1.2s ease-out 2}
 @keyframes dotpop{0%{transform:scale(1)}40%{transform:scale(1.9)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.dots .n{animation:none}}
 .worldkey{display:flex;gap:14px;flex-wrap:wrap;font-size:.75rem;opacity:.85}
 .worldkey span{display:flex;align-items:center;gap:6px}
 .worldkey i{width:8px;height:8px;border-radius:50%;background:var(--pass-ink)}
-.worldkey .k0{opacity:.3}.worldkey .k1{opacity:.75}.worldkey .k2{background:var(--pass-gold)}
+.worldkey .k0{opacity:.3}.worldkey .k1{opacity:.55}.worldkey .k2{background:var(--pass-gold)}.worldkey .kp{background:var(--pass-gold);opacity:.6}
 .worldnew{margin:0;font-size:.85rem;opacity:.9}
 .worldnew b{font-weight:600;color:var(--pass-gold)}
 .goal{border:0;background:transparent;padding:0;position:relative;width:68px;height:68px;flex:none}

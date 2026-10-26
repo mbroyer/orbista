@@ -265,6 +265,13 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .besttimes b{font-variant-numeric:tabular-nums;font-family:var(--f-display);font-weight:400}
 
 /* Breite Bildschirme (Desktop, iPad quer): Breite nutzen, zweispaltig, Knöpfe direkt unter dem Inhalt, Leiste als schwebende Pille */
+/* Handy: Karte flacher, Antworten zur Karte zweispaltig, Weiter-Knopf bleibt am unteren Rand sichtbar */
+@media (max-width:899px){
+  .mapbox svg{max-height:40vh}
+  .q:has(.mapbox) .opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .q:has(.mapbox) .opt{min-height:48px;padding:10px 14px;font-size:1rem}
+  .q>.row:last-child{position:sticky;bottom:0;z-index:2;padding-block:14px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(to bottom,transparent,var(--bg) 35%)}
+}
 @media (min-width:900px){
   body{padding-inline:32px;padding-block:32px 0;background-size:100% 420px}
   main{max-width:1040px}

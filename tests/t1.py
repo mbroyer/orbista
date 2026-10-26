@@ -112,6 +112,17 @@ async def main():
             codes.append(await pg2.get_attribute('#q', 'data-code')); await antwort(pg2); await pg2.click('#nx')
         assert all(c in asien for c in codes), codes
         await pg2.click('#homeBtn'); assert 'Asien' in await pg2.inner_text('#goSub')
+        # Startregion „Ganze Welt“: neue Karten aus allen Regionen
+        pg3 = await (await b.new_context(viewport={'width': 390, 'height': 844})).new_page(); pg3.on('pageerror', lambda e: errs.append(str(e)))
+        await pg3.goto('file://' + W + 'orbista.html'); await pg3.wait_for_timeout(300)
+        assert await pg3.inner_text('#wStart [data-r="Alle"]') == 'Ganze Welt'
+        await pg3.click('#wStart [data-r="Alle"]'); await pg3.click('#begin')
+        regs = await pg3.evaluate("Object.fromEntries(Object.entries(ORBISTA_DATA.REGIONS).flatMap(([r, l]) => l.split(' ').map(c => [c, r])))")
+        welt = set()
+        for i in range(10):
+            welt.add(regs[await pg3.get_attribute('#q', 'data-code')]); await antwort(pg3); await pg3.click('#nx')
+        assert len(welt) >= 2, welt
+        await pg3.click('#homeBtn'); assert 'Ganze Welt' in await pg3.inner_text('#goSub')
         await pg.screenshot(path=W + 't1_ende.png', full_page=True)
         assert await pg.evaluate("!!localStorage.getItem('orbista.mastery')")
         assert not errs, errs

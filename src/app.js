@@ -232,27 +232,31 @@ document.addEventListener("click",e=>{const b=e.target.closest("button");if(b&&!
 $("paths").onclick=e=>{const b=e.target.closest("[data-p]");if(b&&!b.disabled){S.path=b.dataset.p;if(S.path!=="race")S.kind=S.path;else if(S.kind==="m")S.kind="f";renderSetup();show("setup")}};
 $("tabs").onclick=e=>{const b=e.target.closest("[data-tab]");if(!b)return;if(b.dataset.tab==="pass"){renderPass();show("pass")}else goHome()};
 
-// Gezielt üben: Region und Antwortart wählen, mehr nicht
-let S={path:"f",kind:"f",region:"Europa",typing:false};
+// Gezielt üben: Region, Umfang (10 Fragen oder alle Länder der Region auf einmal) und Antwortart wählen, mehr nicht
+let S={path:"f",kind:"f",region:"Europa",typing:false,all:false};
 const raceMode=()=>S.kind==="f"?(S.typing?"type":"f2l"):(S.typing?"ctype":"l2c");
-const raceKey=()=>[raceMode(),S.region,ROUND].join("|");
+const raceKey=()=>[raceMode(),S.region,S.all?"alle":ROUND].join("|");
+const sizeText=n=>S.all?`alle ${n} Länder`:`${ROUND} Fragen`;
 function renderSetup(){
   const race=S.path==="race",k=S.kind;
   $("setupTitle").textContent=race?"Zeitrennen":KIND[k];
-  $("setupSub").textContent=race?"Zehn Fragen gegen die Uhr. Jeder Fehler kostet 5 Sekunden.":"Wohin geht die Reise? Orbista nimmt zuerst, was fällig ist, dann Neues.";
+  const n=poolOf(S.region).length;
+  $("setupSub").textContent=race?`${S.all?"Alle Länder der Region":"Zehn Fragen"} gegen die Uhr. Jeder Fehler kostet 5 Sekunden.`:S.all?"Alle Länder der Region in einer Runde, in zufälliger Reihenfolge. Jede Antwort zählt sofort, du kannst jederzeit aufhören.":"Wohin geht die Reise? Orbista nimmt zuerst, was fällig ist, dann Neues.";
   $("raceBox").hidden=!race;
   $("raceKinds").innerHTML=["f","c"].map(x=>`<button data-k="${x}" aria-pressed="${k===x}">${KIND[x]}</button>`).join("");
   $("regions").innerHTML=[...Object.keys(REGIONS),"Alle"].map(r=>{const pool=poolOf(r),n=pool.filter(c=>known(k,c)).length;
     return `<button class="line" data-r="${r}" aria-pressed="${S.region===r}"><span class="row1"><b>${regionName(r)}</b><span>${n} von ${pool.length}</span></span><span class="meter"><i style="width:${100*n/pool.length}%"></i></span></button>`}).join("");
+  $("sizes").innerHTML=[[0,`${ROUND} Fragen`],[1,`Alle ${n}`]].map(([v,t])=>`<button data-s="${v}" aria-pressed="${S.all===!!v}">${t}</button>`).join("");
   $("answers").innerHTML=[[0,"Auswählen"],[1,"Eintippen"]].map(([v,t])=>`<button data-a="${v}" aria-pressed="${S.typing===!!v}">${t}</button>`).join("");
   const best=(P.best||{})[raceKey()];
   $("answerHint").textContent=race?(best?`Deine Bestzeit für diese Strecke: ${fmt(best)}`:"Noch keine Bestzeit für diese Strecke."):k==="m"?(S.typing?"Ein Land leuchtet auf, du tippst seinen Namen. Das zählt für den dritten Stern.":"Mal tippst du das Land auf der Karte an, mal wählst du den Namen zum markierten Land."):"Eintippen zählt für den dritten Stern.";
   const due=poolOf(S.region).filter(c=>isDue(k,c)).length;
-  $("setupGoSub").textContent=`${regionName(S.region)} · ${ROUND} Fragen`+(due&&!race?` · ${due} zum Wiederholen`:"");
+  $("setupGoSub").textContent=`${regionName(S.region)} · ${sizeText(n)}`+(due&&!race?` · ${due} zum Wiederholen`:"");
 }
 $("setupBack").onclick=()=>goHome();
 $("raceKinds").onclick=e=>{const b=e.target.closest("[data-k]");if(b){S.kind=b.dataset.k;renderSetup()}};
 $("regions").onclick=e=>{const b=e.target.closest("[data-r]");if(b){S.region=b.dataset.r;renderSetup()}};
+$("sizes").onclick=e=>{const b=e.target.closest("[data-s]");if(b){S.all=b.dataset.s==="1";renderSetup()}};
 $("answers").onclick=e=>{const b=e.target.closest("[data-a]");if(b){S.typing=b.dataset.a==="1";renderSetup()}};
 $("setupGo").onclick=()=>startSetup();
 
@@ -328,8 +332,8 @@ function pickQuestions(k,pool,n){
 function startAuto(){const p=autoPlan();begin({items:p.items,restart:startAuto,next:"Weiterreisen"})}
 function startSetup(){
   const race=S.path==="race",pool=poolOf(S.region),both=false;
-  const items=pickQuestions(S.kind,pool,ROUND).map(c=>({c,m:race?raceMode():modeFor(S.kind,c,S.typing,both)}));
-  begin({items,pool,race,key:race?raceKey():null,restart:startSetup,next:"Noch eine Runde"});
+  const items=(S.all?shuffle(pool):pickQuestions(S.kind,pool,ROUND)).map(c=>({c,m:race?raceMode():modeFor(S.kind,c,S.typing,both)}));
+  begin({items,pool,race,all:S.all,key:race?raceKey():null,restart:startSetup,next:"Noch eine Runde"});
 }
 function begin(o){
   clearInterval(G&&G.clock);
@@ -429,7 +433,11 @@ $("q").addEventListener("click",e=>{
     $("fb").className="fb";$("fb").innerHTML=`<b>${n.slice(0,G.hint)}${"·".repeat(Math.max(0,n.length-G.hint))}</b><span>${n.length} Buchstaben · ${C[code].region}</span>`;}
 });
 $("q").addEventListener("submit",e=>{e.preventDefault();if(G.locked)return;const code=G.list[G.i].c;const v=$("ti").value;if(!v.trim())return;answer(matches(code,v,G.kind==="c"),code,null)});
-$("quit").onclick=()=>{clearTimeout(G&&G.timer);clearInterval(G&&G.clock);G=null;goHome()};
+// Eine lange Runde (alle Länder) zeigt beim Beenden das Ergebnis bis hierher; ein abgebrochenes Rennen zählt nicht
+$("quit").onclick=()=>{clearTimeout(G&&G.timer);clearInterval(G&&G.clock);
+  const done=G?G.i+(G.locked?1:0):0;
+  if(G&&G.all&&!G.race&&done>0){G.list=G.list.slice(0,done);G.i=done;$("q").classList.remove("shake");finish();return}
+  G=null;goHome()};
 function raceResult(){
   const total=raceMs(),old=(P.best||{})[G.key],rec=!old||total<old;
   if(rec){P.best=P.best||{};P.best[G.key]=Math.round(total);saveProfile();G.xp+=30;addXp(30)}
@@ -506,7 +514,7 @@ function renderPass(){
     return n?`<div class="slot" data-c="${c}"><div class="sticker" style="--tilt:${tilt[i%tilt.length]}deg"><img src="${flag(c)}" alt=""></div><b>${C[c].name}</b>${passKind==="c"?`<span>${C[c].cap}</span>`:""}<i aria-label="${n} von 3 Sternen">${starStr(n)}</i></div>`
       :`<div class="slot empty" data-c="${c}"><div class="hole">${i+1}</div><b>${C[c].name}</b><span>${passKind==="c"?"Hauptstadt ?":"noch frei"}</span></div>`}).join("")}</div>
   <div class="label">Bestzeiten im Zeitrennen</div>
-  ${best.length?`<div class="besttimes">${best.map(([key,ms])=>{const [m,r,l]=key.split("|");return `<div><span>${MODE_NAME[m]||m} · ${regionName(r)} · ${+l?l+" Fragen":"alle"}</span><b>${fmt(ms)}</b></div>`}).join("")}</div>`:`<p class="muted race">Noch keine Bestzeiten. Das Zeitrennen gibt es ab dem ersten Visum.</p>`}</div>`;
+  ${best.length?`<div class="besttimes">${best.map(([key,ms])=>{const [m,r,l]=key.split("|");return `<div><span>${MODE_NAME[m]||m} · ${regionName(r)} · ${+l?l+" Fragen":"alle Länder"}</span><b>${fmt(ms)}</b></div>`}).join("")}</div>`:`<p class="muted race">Noch keine Bestzeiten. Das Zeitrennen gibt es ab dem ersten Visum.</p>`}</div>`;
   renderSound();renderTheme();
 }
 $("pass").onclick=e=>{const k=e.target.closest("[data-k]"),r=e.target.closest("[data-r]");

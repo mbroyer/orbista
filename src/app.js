@@ -290,14 +290,24 @@ function mapView(){
     // Kreise immer etwa gleich groß auf dem Bildschirm; sichtbar nur, solange das Land selbst zu klein zum Antippen ist
     const set=v=>{vb=v;svg.setAttribute("viewBox",v.join(" "));const k=v[2]/(svg.clientWidth||360);
       el.querySelectorAll(".dot").forEach(d=>{const s=MAP.box[d.dataset.c][2]/k;d.setAttribute("r",7*k);d.style.display=s<14?"":"none"});drawArrow(k)};
-    el.querySelector(".zoom").onclick=e=>{const z=+e.target.dataset.z;if(!z)return;const cx=vb[0]+vb[2]/2,cy=vb[1]+vb[3]/2,w=Math.min(home[2]*1.3,Math.max(home[2]/12,vb[2]*z)),h=w*home[3]/home[2];set([cx-w/2,cy-h/2,w,h])};
-    let drag=null,moved=0;
-    svg.addEventListener("pointerdown",e=>{drag=[e.clientX,e.clientY,vb[0],vb[1]];moved=0});
-    svg.addEventListener("pointermove",e=>{if(!drag)return;const k=vb[2]/svg.clientWidth,dx=e.clientX-drag[0],dy=e.clientY-drag[1];moved=Math.max(moved,Math.abs(dx)+Math.abs(dy));
+    // Zoomen um einen Bildschirmpunkt (Faktor z < 1 = näher heran), begrenzt wie bei +/−
+    const zoomAt=(z,px,py)=>{const r=svg.getBoundingClientRect(),k=vb[2]/r.width,w=Math.min(home[2]*1.3,Math.max(home[2]/12,vb[2]*z)),f=w/vb[2],
+      mx=vb[0]+(px-r.left)*k,my=vb[1]+(py-r.top)*k;set([mx-(mx-vb[0])*f,my-(my-vb[1])*f,w,w*home[3]/home[2]])};
+    el.querySelector(".zoom").onclick=e=>{const z=+e.target.dataset.z;if(!z)return;const r=svg.getBoundingClientRect();zoomAt(z,r.left+r.width/2,r.top+r.height/2)};
+    // Ein Finger verschiebt, zwei Finger zoomen (Pinch), am Rechner Trackpad-Geste (Strg+Mausrad)
+    let drag=null,moved=0,pinch=null;const pts=new Map();
+    const two=()=>{const [a,b]=[...pts.values()];return [Math.hypot(a[0]-b[0],a[1]-b[1]),(a[0]+b[0])/2,(a[1]+b[1])/2]};
+    svg.addEventListener("pointerdown",e=>{pts.set(e.pointerId,[e.clientX,e.clientY]);
+      if(pts.size===2){pinch=two();drag=null;moved=99}else if(pts.size===1){drag=[e.clientX,e.clientY,vb[0],vb[1]];moved=0}});
+    svg.addEventListener("pointermove",e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,[e.clientX,e.clientY]);
+      if(pinch&&pts.size===2){const [d,x,y]=two(),k=vb[2]/svg.clientWidth;set([vb[0]-(x-pinch[1])*k,vb[1]-(y-pinch[2])*k,vb[2],vb[3]]);if(pinch[0]>0&&d>0)zoomAt(pinch[0]/d,x,y);pinch=[d,x,y];return}
+      if(!drag)return;const k=vb[2]/svg.clientWidth,dx=e.clientX-drag[0],dy=e.clientY-drag[1];moved=Math.max(moved,Math.abs(dx)+Math.abs(dy));
       if(moved>8){svg.setPointerCapture&&svg.setPointerCapture(e.pointerId);set([drag[2]-dx*k,drag[3]-dy*k,vb[2],vb[3]])}});
-    const up=e=>{const t=moved<=8&&e.target.closest&&e.target.closest("[data-c]");drag=null;
+    const lift=e=>{pts.delete(e.pointerId);if(pts.size<2)pinch=null;if(pts.size===1){const [p]=[...pts.values()];drag=[p[0],p[1],vb[0],vb[1]]}};
+    const up=e=>{const t=pts.size===1&&moved<=8&&e.target.closest&&e.target.closest("[data-c]");lift(e);if(!pts.size)drag=null;
       if(t&&G&&!G.locked&&G.mode==="loc"){const code=G.list[G.i].c;answer(t.dataset.c===code,code,t.dataset.c)}};
-    svg.addEventListener("pointerup",up);svg.addEventListener("pointercancel",()=>{drag=null});
+    svg.addEventListener("pointerup",up);svg.addEventListener("pointercancel",e=>{lift(e);if(!pts.size)drag=null});
+    svg.addEventListener("wheel",e=>{if(!e.ctrlKey)return;e.preventDefault();zoomAt(Math.exp(e.deltaY*.01),e.clientX,e.clientY)},{passive:false});
     MAP_VIEW={el,svg,
       show(r){home=MAP.view[r];svg.style.aspectRatio=home[2]+"/"+home[3];el.classList.remove("tap");this.clear();target=null;set(home.slice())},
       mark(c,cls){el.querySelectorAll(`[data-c="${c}"]`).forEach(x=>{x.classList.add(cls);if(x.tagName==="path")x.parentNode.insertBefore(x,el.querySelector(".dot"))})},

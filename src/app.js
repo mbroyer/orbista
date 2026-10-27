@@ -104,9 +104,13 @@ const SFX={
 function play(k,delay=0){if(!soundOn())return;try{if(!ac())return;delay?setTimeout(()=>SFX[k](),delay):SFX[k]()}catch(e){}}
 
 // Spielarten: der geführte Ablauf wählt sie selbst; beim gezielten Üben nur „Auswählen“ oder „Eintippen“
-const MODE_NAME={f2l:"Flagge → Land",l2f:"Land → Flagge",type:"Land tippen",l2c:"Land → Hauptstadt",c2l:"Hauptstadt → Land",ctype:"Hauptstadt tippen",f2c:"Flagge → Hauptstadt",fctype:"Hauptstadt zur Flagge tippen",loc:"Land auf der Karte antippen",mark:"Markiertes Land → Name",mtype:"Markiertes Land tippen"};
+const MODE_NAME={pie:"Farbkreis",two:"Zwei in Teilen",hole:"Schlüsselloch",fake:"Echt oder falsch",f2l:"Flagge → Land",l2f:"Land → Flagge",type:"Land tippen",l2c:"Land → Hauptstadt",c2l:"Hauptstadt → Land",ctype:"Hauptstadt tippen",f2c:"Flagge → Hauptstadt",fctype:"Hauptstadt zur Flagge tippen",loc:"Land auf der Karte antippen",mark:"Markiertes Land → Name",mtype:"Markiertes Land tippen"};
 const CAPMODES=["l2c","c2l","ctype","f2c","fctype"], MAPMODES=["loc","mark","mtype"], TYPEMODES=["type","ctype","fctype","mtype"], BOTHMODES=["f2c","fctype"];
 const kindOf=m=>CAPMODES.includes(m)?"c":MAPMODES.includes(m)?"m":"f";
+// Kreative Spielarten zählen für die Flaggen-Karte (nur Auswählen). Daten aus src/kreativ.js (tools/kreativ.py):
+// Farbanteile, Schlüsselloch-Punkte, spiegelgleiche Flaggen und die Einzelteile abstrakter Flaggen (ohne Wappen und Bildzeichen)
+const KR=window.ORBISTA_KREATIV, KREATIV=["pie","two","hole","fake"];
+const kreativFor=c=>KREATIV.filter(m=>m!=="two"||KR.parts[c]);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const KIND={f:"Flaggen",c:"Hauptstädte",m:"Landkarte"};
 const KINDS=["f","c","m"];
@@ -156,7 +160,9 @@ $("begin").onclick=()=>{const first=!P.topic;P.topic=W.topic;P.goalQ=W.goal;P.st
 // Weiterreisen: Orbista stellt die Runde selbst zusammen. Zuerst fällige Karten (wenige Sterne vorn),
 // dann neue aus der ersten Region, die noch Unbekanntes hat (ab der gewählten Startregion `P.start`; bei „Alle“ aus der ganzen Welt), dann die übrigen nach Fälligkeit.
 // Ab zwei Sternen wird getippt, vorher ausgewählt.
+// Kreative Spielarten: in „Weiterreisen“ bei etwa jeder dritten Flagge, die man schon einmal richtig hatte; gezielt unter „Knifflig“
 function modeFor(k,c,typing,both){
+  if(k==="f"&&(typing==="kniff"||typing===null&&stars(k,c)>=1&&Math.random()<.35))return pick(kreativFor(c));
   const t=typing===null?stars(k,c)>=2:typing;
   if(k==="f")return t?"type":pick(["f2l","l2f"]);
   if(k==="m")return t?"mtype":pick(["loc","mark"]);
@@ -233,7 +239,7 @@ $("paths").onclick=e=>{const b=e.target.closest("[data-p]");if(b&&!b.disabled){S
 $("tabs").onclick=e=>{const b=e.target.closest("[data-tab]");if(!b)return;if(b.dataset.tab==="pass"){renderPass();show("pass")}else goHome()};
 
 // Gezielt üben: Region und Antwortart wählen, mehr nicht
-let S={path:"f",kind:"f",region:"Europa",typing:false};
+let S={path:"f",kind:"f",region:"Europa",typing:false,tricky:false};
 const raceMode=()=>S.kind==="f"?(S.typing?"type":"f2l"):(S.typing?"ctype":"l2c");
 const raceKey=()=>[raceMode(),S.region,ROUND].join("|");
 function renderSetup(){
@@ -244,16 +250,18 @@ function renderSetup(){
   $("raceKinds").innerHTML=["f","c"].map(x=>`<button data-k="${x}" aria-pressed="${k===x}">${KIND[x]}</button>`).join("");
   $("regions").innerHTML=[...Object.keys(REGIONS),"Alle"].map(r=>{const pool=poolOf(r),n=pool.filter(c=>known(k,c)).length;
     return `<button class="line" data-r="${r}" aria-pressed="${S.region===r}"><span class="row1"><b>${regionName(r)}</b><span>${n} von ${pool.length}</span></span><span class="meter"><i style="width:${100*n/pool.length}%"></i></span></button>`}).join("");
-  $("answers").innerHTML=[[0,"Auswählen"],[1,"Eintippen"]].map(([v,t])=>`<button data-a="${v}" aria-pressed="${S.typing===!!v}">${t}</button>`).join("");
+  const tricky=S.tricky&&k==="f"&&!race;
+  $("answers").innerHTML=[[0,"Auswählen"],[1,"Eintippen"],...(k==="f"&&!race?[[2,"Knifflig"]]:[])].map(([v,t])=>`<button data-a="${v}" aria-pressed="${v===2?tricky:!tricky&&S.typing===!!v}">${t}</button>`).join("");
+  $("answers").classList.toggle("three",k==="f"&&!race);
   const best=(P.best||{})[raceKey()];
-  $("answerHint").textContent=race?(best?`Deine Bestzeit für diese Strecke: ${fmt(best)}`:"Noch keine Bestzeit für diese Strecke."):k==="m"?(S.typing?"Ein Land leuchtet auf, du tippst seinen Namen. Das zählt für den dritten Stern.":"Mal tippst du das Land auf der Karte an, mal wählst du den Namen zum markierten Land."):"Eintippen zählt für den dritten Stern.";
+  $("answerHint").textContent=race?(best?`Deine Bestzeit für diese Strecke: ${fmt(best)}`:"Noch keine Bestzeit für diese Strecke."):k==="m"?(S.typing?"Ein Land leuchtet auf, du tippst seinen Namen. Das zählt für den dritten Stern.":"Mal tippst du das Land auf der Karte an, mal wählst du den Namen zum markierten Land."):tricky?"Farbkreis, zwei Flaggen in Teilen, Schlüsselloch oder echt oder falsch.":"Eintippen zählt für den dritten Stern.";
   const due=poolOf(S.region).filter(c=>isDue(k,c)).length;
   $("setupGoSub").textContent=`${regionName(S.region)} · ${ROUND} Fragen`+(due&&!race?` · ${due} zum Wiederholen`:"");
 }
 $("setupBack").onclick=()=>goHome();
 $("raceKinds").onclick=e=>{const b=e.target.closest("[data-k]");if(b){S.kind=b.dataset.k;renderSetup()}};
 $("regions").onclick=e=>{const b=e.target.closest("[data-r]");if(b){S.region=b.dataset.r;renderSetup()}};
-$("answers").onclick=e=>{const b=e.target.closest("[data-a]");if(b){S.typing=b.dataset.a==="1";renderSetup()}};
+$("answers").onclick=e=>{const b=e.target.closest("[data-a]");if(b){S.typing=b.dataset.a==="1";S.tricky=b.dataset.a==="2";renderSetup()}};
 $("setupGo").onclick=()=>startSetup();
 
 // Landkarte: eine einzige SVG-Karte (Natural Earth, src/map.js), die je Frage auf die Region der Frage schwenkt.
@@ -272,6 +280,46 @@ function gridPath(){
 function near(code){const [x,y]=MAP.box[code]||[0,0];
   const d=c=>{const b=MAP.box[c];return b?Math.hypot(b[0]-x,b[1]-y):1e9};
   return shuffle(ALL.filter(c=>c!==code).sort((a,b)=>d(a)-d(b)).slice(0,6)).slice(0,3)}
+// Kreative Spielarten: Farbfamilien vergleichen, damit der Farbkreis eindeutig bleibt und bei „Zwei in Teilen“ die Flaggen Farben teilen
+const rgbOf=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+function fam(h){const [r,g,b]=rgbOf(h).map(v=>v/255),mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;
+  if(d<.15)return (mx+mn)/2>.6?"w":"k";
+  const hu=((mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4)*60+360)%360;
+  return hu<20||hu>=330?"r":hu<45?"o":hu<70?"y":hu<170?"g":"b"}
+function pieVec(c){const v={};KR.pie[c].forEach(([h,p])=>v[fam(h)]=(v[fam(h)]||0)+p);return v}
+function pieDist(a,b){const A=pieVec(a),B=pieVec(b);let d=0;for(const k of new Set([...Object.keys(A),...Object.keys(B)]))d+=Math.abs((A[k]||0)-(B[k]||0));return d}
+const fams=c=>new Set(KR.pie[c].map(p=>fam(p[0])));
+const sharesColor=(a,b)=>{const B=fams(b);return [...fams(a)].some(f=>B.has(f))};
+// Auswahl wie bei den anderen Fragen (zuerst dieselbe Region), aber nur Länder, die zur Bedingung passen
+function similar(code,n,okFn){
+  const pool=G&&G.pool||poolOf(C[code].region),reg=C[code].region;
+  const pref=shuffle(pool.filter(x=>x!==code&&okFn(x))).sort((x,y)=>(C[x].region===reg?0:1)-(C[y].region===reg?0:1));
+  const more=shuffle(ALL.filter(x=>x!==code&&!pref.includes(x)&&okFn(x)));
+  return [...pref,...more].slice(0,n)}
+function pieSvg(c){
+  const sh=KR.pie[c],tot=sh.reduce((a,x)=>a+x[1],0),P=t=>[(100+92*Math.cos(t)).toFixed(1),(100+92*Math.sin(t)).toFixed(1)];let a=-Math.PI/2;
+  return `<svg class="pie" viewBox="0 0 200 200" role="img" aria-label="Farbanteile">${sh.map(([h,p])=>{const f=p/tot,a2=a+f*2*Math.PI,d=f>.999?`<circle cx="100" cy="100" r="92" fill="${h}"/>`:`<path fill="${h}" d="M100 100L${P(a)}A92 92 0 ${f>.5?1:0} 1 ${P(a2)}z"/>`;a=a2;return d}).join("")}</svg>`}
+// Echt oder falsch: Farben im SVG-Text vertauschen oder ersetzen, oder spiegeln (nur bei Flaggen, die gespiegelt anders aussehen)
+const svgText=c=>{const u=flag(c),b=atob(u.slice(u.indexOf(",")+1));try{return decodeURIComponent(escape(b))}catch(e){return b}};
+const svgUrl=t=>"data:image/svg+xml;charset=utf-8,"+encodeURIComponent(t);
+let probe=null;
+function toRgb(v){probe=probe||document.createElement("i");probe.style.color="";probe.style.color=v;if(!probe.style.color)return null;
+  document.body.appendChild(probe);const m=getComputedStyle(probe).color.match(/\d+/g);probe.remove();return m?m.slice(0,3).map(Number):null}
+function recolor(t,map){
+  const sub=v=>{if(v==="none"||v.startsWith("url"))return v;const rgb=toRgb(v);if(!rgb)return v;let best=null,bd=75;
+    for(const [f,to] of map){const d=Math.hypot(rgb[0]-f[0],rgb[1]-f[1],rgb[2]-f[2]);if(d<bd){bd=d;best=to}}return best||v};
+  return t.replace(/(fill|stroke|stop-color)="([^"]+)"/g,(m,a,v)=>`${a}="${sub(v)}"`).replace(/(fill|stroke|stop-color):\s*([^;"]+)/g,(m,a,v)=>`${a}:${sub(v)}`)}
+const POOL_COL=["#d52b1e","#0b3c8c","#1f7a3a","#f7c600","#111111","#ffffff","#ff8200","#6cace4"];
+function fakes(c){
+  const t=svgText(c),pal=KR.pie[c].map(p=>p[0]),rgb=pal.map(rgbOf),out=[],seen=new Set([t]);
+  const add=(svg,why,flip)=>{const key=svg+(flip?"|f":"");if(seen.has(key))return;seen.add(key);out.push({src:svgUrl(svg),why,flip})};
+  if(pal.length>=2){const [i,j]=shuffle([...pal.keys()]);add(recolor(t,[[rgb[i],pal[j]],[rgb[j],pal[i]]]),"Zwei Farben sind vertauscht.")}
+  const fresh=shuffle(POOL_COL.filter(h=>rgb.every(r=>{const x=rgbOf(h);return Math.hypot(r[0]-x[0],r[1]-x[1],r[2]-x[2])>120})));
+  shuffle([...pal.keys()]).forEach((i,k)=>{if(fresh[k])add(recolor(t,[[rgb[i],fresh[k]]]),"Eine Farbe ist falsch.")});
+  if(!KR.sym.includes(c))add(t,"Sie ist gespiegelt.",true);
+  const pickd=shuffle(out).slice(0,3);
+  while(pickd.length<3)pickd.push({src:flag(c),why:"Die Farben sind verschoben.",hue:60*(pickd.length+1)});
+  return pickd}
 function mapView(){
   if(!MAP_VIEW){
     const el=document.createElement("div");el.className="mapbox";el.id="map";
@@ -328,7 +376,8 @@ function pickQuestions(k,pool,n){
 function startAuto(){const p=autoPlan();begin({items:p.items,restart:startAuto,next:"Weiterreisen"})}
 function startSetup(){
   const race=S.path==="race",pool=poolOf(S.region),both=false;
-  const items=pickQuestions(S.kind,pool,ROUND).map(c=>({c,m:race?raceMode():modeFor(S.kind,c,S.typing,both)}));
+  const tricky=S.tricky&&S.kind==="f";
+  const items=pickQuestions(S.kind,pool,ROUND).map(c=>({c,m:race?raceMode():modeFor(S.kind,c,tricky?"kniff":S.typing,both)}));
   begin({items,pool,race,key:race?raceKey():null,restart:startSetup,next:"Noch eine Runde"});
 }
 function begin(o){
@@ -353,7 +402,7 @@ function hud(){
 function next(){
   clearTimeout(G.timer);
   if(G.i>=G.list.length) return finish();
-  const {c:code,m}=G.list[G.i];G.locked=false;G.hint=0;G.mode=m;G.kind=kindOf(m);
+  const {c:code,m}=G.list[G.i];G.locked=false;G.hint=0;G.mode=m;G.kind=kindOf(m);G.picks=[];
   $("prog").style.width=(100*G.i/G.list.length)+"%";
   G.qStart=performance.now();hud();
   const q=$("q");q.dataset.code=code;q.dataset.mode=m;
@@ -373,11 +422,25 @@ function next(){
   else if(m==="c2l") h=`<h2>${C[code].cap} ist die Hauptstadt von …</h2>${txt(o(),"name")}`;
   else if(m==="ctype") h=`${small}<h2>Wie heißt die Hauptstadt von ${n}?</h2>${typebox("Hauptstadt eintippen")}`;
   else if(m==="f2c") h=`<h2>Welche Hauptstadt gehört zu dieser Flagge?</h2>${big}${txt(o(),"cap")}`;
+  else if(m==="pie") h=`<h2>Welche Flagge hat diese Farben?</h2><div class="stage">${pieSvg(code)}</div>${txt(shuffle([code,...similar(code,3,x=>pieDist(code,x)>.35)]),"name")}`;
+  else if(m==="two"){
+    // die zweite Flagge teilt mindestens eine Farbe; Auswahl aus sechs Ländern mit ähnlichen Farben
+    const c2=G.c2=similar(code,1,x=>KR.parts[x]&&sharesColor(code,x)&&pieDist(code,x)>.2)[0]||similar(code,1,x=>KR.parts[x])[0];q.dataset.c2=c2;
+    const opts=shuffle([code,c2,...similar(code,4,x=>x!==c2&&(sharesColor(code,x)||sharesColor(c2,x)))]);
+    h=`<h2>Welche zwei Flaggen liegen hier durcheinander?</h2><div class="stage parts"></div><p class="hint">Tippe beide Länder an.</p><div class="opts two">${opts.map(c=>`<button class="opt" data-c="${c}">${C[c].name}</button>`).join("")}</div>`}
+  else if(m==="hole") h=`<h2>Welche Flagge steckt dahinter?</h2><div class="stage"><div class="keyhole"><img class="flag" src="${flag(code)}" alt=""><i class="ring"></i></div></div><button class="btn ghost" id="holeBtn" type="button">Größeres Loch</button>${txt(o(),"name")}`;
+  else if(m==="fake"){
+    // die echte Flagge trägt das Länderkürzel, die veränderten ein eigenes
+    G.fakes=fakes(code);const list=shuffle([{c:code,src:flag(code)},...G.fakes.map((f,i)=>Object.assign({c:"fake"+i},f))]);
+    h=`<h2>Welche ist die echte Flagge von ${n}?</h2><div class="opts imgs">${list.map(f=>`<button class="opt imgopt" data-c="${f.c}" aria-label="Flagge"><img src="${f.src}" alt=""${f.flip?' style="transform:scaleX(-1)"':f.hue?` style="filter:hue-rotate(${f.hue}deg)"`:""}></button>`).join("")}</div>`}
   else if(m==="loc") h=`<div class="maphead">${small}<h2>Wo liegt ${n}?</h2></div><div class="mapslot"></div>`;
   else if(m==="mark") h=`<h2>Welches Land ist markiert?</h2><div class="mapslot"></div>${txt(shuffle([code,...near(code)]),"name")}`;
   else if(m==="mtype") h=`<h2>Wie heißt das markierte Land?</h2><div class="mapslot"></div>${typebox("Land eintippen")}`;
   else h=`<h2>Wie heißt die Hauptstadt zu dieser Flagge?</h2>${big}${typebox("Hauptstadt eintippen")}`;
   q.innerHTML=kick+h+fb;
+  if(m!=="two")delete q.dataset.c2;
+  if(m==="two")layParts(code,G.c2);
+  if(m==="hole"){G.hole=pick(KR.keys[code]);setHole(0)}
   if(MAPMODES.includes(m)){
     // erst einhängen, dann auf die Region schwenken: die Kreisgröße hängt von der Breite auf dem Bildschirm ab
     const v=mapView();q.querySelector(".mapslot").replaceWith(v.el);v.show(C[code].region);
@@ -385,6 +448,22 @@ function next(){
     else{v.mark(code,"hi");v.point(code)}
   }
   if(TYPEMODES.includes(m)&&!(m==="mtype"&&matchMedia("(pointer:coarse)").matches)) setTimeout(()=>{const t=$("ti");t&&t.focus()},50);
+}
+// Zwei in Teilen: alle Teile im gleichen Maßstab, nach Größe sortiert in einer Reihe (höchstens etwa drei Reihen)
+function layParts(a,b){
+  const st=$("q").querySelector(".stage.parts"),W=Math.min(st.clientWidth-32,460)||300;
+  const ps=shuffle([...KR.parts[a],...KR.parts[b]]).sort((x,y)=>y.w*y.h-x.w*x.h),sum=ps.reduce((t,p)=>t+p.w,0),k=Math.min(W*.42,(3*W-16*ps.length)/sum);
+  const img=p=>`<img class="part" alt="" src="${p.src}" style="width:${Math.max(8,p.w*k).toFixed(1)}px">`;
+  st.innerHTML=ps.map(p=>p.n?`<span class="pn">${img(p)}<b>×${p.n}</b></span>`:img(p)).join("");
+}
+// Schlüsselloch: Kreis um einen Punkt mit mindestens zwei Farben; Stufe 3 = ganze Flagge
+function setHole(l){
+  const h=$("q").querySelector(".keyhole");if(!h)return;const [x,y]=G.hole,r=[11,18,28][l];G.holeL=l;
+  const img=h.querySelector("img"),ring=h.querySelector(".ring");
+  if(l>=3){img.style.clipPath="none";ring.hidden=true;return}
+  img.style.clipPath=`circle(${r}% at ${x*100}% ${y*100}%)`;
+  const d=r*Math.hypot(4,3)/Math.SQRT2/2; // Kreisradius in % bezieht sich auf die Diagonale / √2, Ring in % der Breite
+  Object.assign(ring.style,{width:d+"%",left:(x*100-d/2)+"%",top:(y*100-d*2/3)+"%"});
 }
 function answer(ok,code,picked){
   if(G.locked)return;
@@ -401,19 +480,22 @@ function answer(ok,code,picked){
   }else{G.streak=0;G.missed.push(G.list[G.i])}
   play(!ok?"bad":gain>0?"star":"ok");
   hud();
-  document.querySelectorAll(".opt").forEach(b=>{b.disabled=true;if(b.dataset.c===code)b.classList.add("ok");else if(b.dataset.c===picked)b.classList.add("bad")});
+  document.querySelectorAll(".opt").forEach(b=>{b.disabled=true;b.classList.remove("sel");if(b.dataset.c===code||G.mode==="two"&&b.dataset.c===G.c2)b.classList.add("ok");else if(b.dataset.c===picked||G.mode==="two"&&(G.picks||[]).includes(b.dataset.c))b.classList.add("bad")});
+  if(G.mode==="hole"){setHole(3);const hb=$("holeBtn");if(hb)hb.hidden=true}
+  if(G.mode==="two")$("q").querySelector(".stage.parts").innerHTML=`<div class="pair"><img class="flag" src="${flag(code)}" alt="${C[code].name}"><img class="flag" src="${flag(G.c2)}" alt="${C[G.c2].name}"></div>`;
   const ti=$("ti");if(ti)ti.disabled=true;
   if(G.kind==="m"&&MAP_VIEW){MAP_VIEW.clear();MAP_VIEW.el.classList.remove("tap");MAP_VIEW.mark(code,"ok");if(picked&&picked!==code)MAP_VIEW.mark(picked,"bad");MAP_VIEW.point(code)}
   const stk=G.streak>=3?` · ${G.streak} in Folge`:"";
   fb.className="fb "+(ok?"ok":"bad");
-  const x=C[code], want=G.kind==="c"?x.cap:x.name, note=G.kind==="c"&&CAP_NOTE[code];
+  const x=C[code], want=G.kind==="c"?x.cap:G.mode==="two"?`${x.name} und ${C[G.c2].name}`:x.name, note=G.kind==="c"&&CAP_NOTE[code];
   if(G.race){ // im Rennen sofort weiter, bei Fehlern kurz die Lösung zeigen
     fb.innerHTML=`<b>${ok?"Richtig!":"Das war "+want}</b>${ok?"":`<span>+5 Sekunden</span>`}`;
     if(!ok)$("q").classList.add("shake");
     G.timer=setTimeout(()=>{$("q").classList.remove("shake");G.i++;next()},ok?250:1200);
     return;
   }
-  const tapped=G.mode==="loc"&&picked&&!ok?`<b>Das war ${C[picked]?C[picked].name:"ein anderes Land"}</b><span>${x.name} ist grün markiert.</span>`:"";
+  const fk=G.mode==="fake"&&!ok&&picked?G.fakes[+picked.slice(4)]:null;
+  const tapped=fk?`<b>Die war verändert</b><span>${fk.why} Die echte Flagge von ${x.name} ist grün markiert.</span>`:G.mode==="loc"&&picked&&!ok?`<b>Das war ${C[picked]?C[picked].name:"ein anderes Land"}</b><span>${x.name} ist grün markiert.</span>`:"";
   fb.innerHTML=tapped?`${tapped}<span class="stars" aria-label="${s} von 3 Sternen">${starStr(s)}</span>`:`<b>${ok?"Richtig!":"Das war "+want}</b><span>${x.name} · ${x.cap} · ${x.region}${ok?stk:""}</span><span class="stars${gain>0?" up":""}" aria-label="${s} von 3 Sternen">${starStr(s)}</span>${note?`<span class="note">${note}</span>`:""}`;
   if(!ok) $("q").classList.add("shake");
   const last=G.i+1>=G.list.length;
@@ -423,7 +505,15 @@ function answer(ok,code,picked){
   $("nx").onclick=()=>{$("q").classList.remove("shake");G.i++;next()};
 }
 $("q").addEventListener("click",e=>{
-  const b=e.target.closest(".opt");if(b&&!G.locked){const code=G.list[G.i].c;answer(b.dataset.c===code,code,b.dataset.c);return}
+  const b=e.target.closest(".opt");
+  if(b&&!G.locked&&G.mode==="two"){ // zwei Länder antippen; ein Tipp auf ein gewähltes nimmt es zurück
+    const code=G.list[G.i].c;G.picks=G.picks||[];const i=G.picks.indexOf(b.dataset.c);
+    if(i>=0){G.picks.splice(i,1);b.classList.remove("sel");return}
+    G.picks.push(b.dataset.c);b.classList.add("sel");play("tap");
+    if(G.picks.length===2){const ok=G.picks.includes(code)&&G.picks.includes(G.c2);G.picks=G.picks.filter(c=>c!==code&&c!==G.c2);answer(ok,code,null)}
+    return}
+  if(b&&!G.locked){const code=G.list[G.i].c;answer(b.dataset.c===code,code,b.dataset.c);return}
+  if(e.target.id==="holeBtn"&&!G.locked){G.hint++;setHole(Math.min(2,G.holeL+1));if(G.holeL>=2){e.target.disabled=true;e.target.textContent="Größer geht nicht"}return}
   if(e.target.id==="skip"&&!G.locked){answer(false,G.list[G.i].c,null);return}
   if(e.target.id==="hintBtn"&&!G.locked){const code=G.list[G.i].c;G.hint++;const n=G.kind==="c"?C[code].cap:C[code].name;
     $("fb").className="fb";$("fb").innerHTML=`<b>${n.slice(0,G.hint)}${"·".repeat(Math.max(0,n.length-G.hint))}</b><span>${n.length} Buchstaben · ${C[code].region}</span>`;}

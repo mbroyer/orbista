@@ -21,6 +21,9 @@ async def antwort(pg, ok=True):
         if ok: await pg.fill('#ti', a['v']); await pg.click('#tf button[type=submit]')
         else: await pg.click('#skip')
     elif 'tap' in a: await tippe(pg, a['c'] if ok else ('FR' if a['c'] != 'FR' else 'DE'))
+    elif a['m'] == 'two':  # Zwei in Teilen: beide Länder antippen
+        c2 = await pg.get_attribute('#q', 'data-c2'); await pg.click('.opt[data-c="%s"]' % a['c'])
+        await pg.click('.opt[data-c="%s"]' % c2 if ok else '.opt:not([data-c="%s"]):not([data-c="%s"]) >> nth=0' % (a['c'], c2))
     elif ok: await pg.click('.opt[data-c="%s"]' % a['c'])
     else: await pg.click('.opt:not(.ok):not([data-c="%s"]) >> nth=0' % a['c'])
     return a['m']

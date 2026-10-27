@@ -161,6 +161,22 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .opt.bad{border-color:var(--bad);background:var(--bad-bg);box-shadow:3px 3px 0 var(--bad)}
 .opt[disabled]{cursor:default}
 .opt[disabled]:not(.ok):not(.bad){box-shadow:none;border-color:var(--line2)}
+/* Kreative Spielarten: Farbkreis, Zwei in Teilen, Schlüsselloch (Echt oder falsch nutzt die Flaggen-Auswahl) */
+.pie{width:min(240px,80%);height:auto;display:block}
+.pie path,.pie circle{stroke:var(--card);stroke-width:2;stroke-linejoin:round}
+.stage.parts{flex-wrap:wrap;align-items:center;align-content:center;gap:14px 16px;background:var(--sea);min-height:180px}
+.part{display:block;flex:none;height:auto;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.35))}
+.pn{display:flex;align-items:center;gap:6px}
+.pn b{font-family:var(--f-display);font-weight:400;font-size:1.1rem}
+.pair{display:flex;gap:12px;width:100%;justify-content:center;align-items:center}
+.pair .flag{width:48%}
+.opts.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.opt.sel{border-color:var(--gold);box-shadow:3px 3px 0 var(--gold);background:var(--sel)}
+.q .hint{margin:-8px 0 0;color:var(--muted);font-size:.95rem}
+.keyhole{position:relative;width:100%;max-width:300px;outline:1.5px dashed var(--line2);outline-offset:-1px}
+.keyhole .flag{max-width:none;box-shadow:none;background:transparent;transition:clip-path .45s ease}
+.keyhole .ring{position:absolute;aspect-ratio:1;border:2px dashed var(--muted);border-radius:50%;pointer-events:none;transition:all .45s ease}
+@media (prefers-reduced-motion:reduce){.keyhole .flag,.keyhole .ring{transition:none}}
 .typebox{display:flex;gap:10px;width:100%}
 .typebox input{flex:1;min-width:0;font:inherit;font-size:1.2rem;padding:14px;border-radius:10px;border:2px solid var(--ink);background:var(--card);color:var(--ink)}
 .typebox .btn{padding-inline:20px}
@@ -338,6 +354,8 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
   .q:has(.stage)>.kicker{margin-top:0}
   .q:has(.stage) .flag{max-width:none}
   .q:has(.stage) .opts{display:flex}
+  .q:has(.stage) .opts.two{display:grid}
+  .q:has(.stage) .keyhole{max-width:none}
   .q .flag.small{width:128px}
   /* Landkarte links groß, Frage und Antworten rechts */
   .q:has(.mapbox){max-width:1040px;display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);column-gap:40px;row-gap:16px;align-items:start;align-content:start;padding-top:3vh;text-align:left}

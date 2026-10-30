@@ -4,7 +4,7 @@ H = os.path.dirname(os.path.abspath(__file__)) + '/'
 S = H + 'src/'
 def rd(p): return open(p, encoding='utf8').read()
 
-data, app, css, body = rd(S + 'data.js'), rd(S + 'app.js'), rd(S + 'style.css'), rd(S + 'body.html')
+data, app, css, body, wmap = rd(S + 'data.js'), rd(S + 'app.js'), rd(S + 'style.css'), rd(S + 'body.html'), rd(S + 'map.js') + rd(S + 'dots.js') + rd(S + 'kreativ.js')
 # Flaggen als data-URIs einbetten, damit die Seite ohne weitere Dateien läuft
 flags = {f[:-4]: 'data:image/svg+xml;base64,' + base64.b64encode(open(H + 'flags/' + f, 'rb').read()).decode()
          for f in sorted(os.listdir(H + 'flags')) if f.endswith('.svg')}
@@ -26,6 +26,9 @@ window.ORBISTA_FLAGS=''' + json.dumps(flags, separators=(',', ':')) + ''';
 </script>
 <script>
 ''' + data + '''
+</script>
+<script>
+''' + wmap + '''
 </script>
 <script>
 ''' + app + '''

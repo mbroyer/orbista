@@ -15,12 +15,13 @@ function matches(code,input,cap){const g=norm(input);if(!g)return false;
   return cands.some(t=>t===g||(t.length>=7&&lev(t,g)<=1)||(t.length>=12&&lev(t,g)<=2))}
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
-// Fortschritt (nur lokal im Browser, optional), getrennt für Flaggen (f) und Hauptstädte (c)
+// Fortschritt (nur lokal im Browser, optional), getrennt für Flaggen (f), Hauptstädte (c) und Landkarte (m)
 // Schlüssel nie umbenennen; alter Stand aus Flaggo wird beim ersten Start übernommen
-const KEYS={f:"orbista.mastery",c:"orbista.capitals"};
-const M={f:{},c:{}};
+const KEYS={f:"orbista.mastery",c:"orbista.capitals",m:"orbista.map"};
+const M={f:{},c:{},m:{}};
 try{M.f=JSON.parse(localStorage.getItem(KEYS.f)||localStorage.getItem("flaggo.mastery")||"{}")}catch(e){}
 try{M.c=JSON.parse(localStorage.getItem(KEYS.c)||"{}")}catch(e){}
+try{M.m=JSON.parse(localStorage.getItem(KEYS.m)||"{}")}catch(e){}
 function saveMastery(k){try{localStorage.setItem(KEYS[k],JSON.stringify(M[k]))}catch(e){}}
 
 // Sterne pro Karte: 1 = einmal richtig, 2 = gekonnt (r ≥ 2, r > w, an zwei Tagen richtig),
@@ -44,24 +45,24 @@ function record(k,c,ok,typed){
 }
 const starStr=n=>"★".repeat(n)+"☆".repeat(3-n);
 
-// Reisepunkte (XP), Level, Tagesziel und Serie
+// Reisepunkte (XP, nur im Hintergrund für die spätere Rangliste), Tagesziel und Serie
 const PKEY="orbista.profile";
-let P={xp:0,day:0,dayXp:0,goal:50,streak:0,goalDay:-9,restWeek:-1};
+let P={xp:0,day:0,dayXp:0,dayQ:0,goalQ:10,streak:0,goalDay:-9,restWeek:-1};
 try{Object.assign(P,JSON.parse(localStorage.getItem(PKEY)||"{}"))}catch(e){}
+// Früher war das Tagesziel in XP (30/50/100), jetzt in Fragen (5/10/20)
+if(P.goal!==undefined){if(!(P.goalQ>0)||P.goalQ===10)P.goalQ={30:5,50:10,100:20}[P.goal]||10;delete P.goal}
 function saveProfile(){try{localStorage.setItem(PKEY,JSON.stringify(P))}catch(e){}}
-const xpFor=L=>50*L*(L-1); // Level 2 bei 100, 5 bei 1.000, 10 bei 4.500 XP
-const levelOf=xp=>{let L=1;while(xpFor(L+1)<=xp)L++;return L};
-const TITLES=["Tourist","Rucksackreisender","Entdecker","Kartograf","Weltenbummler","Botschafter"];
-const titleOf=L=>TITLES[Math.min(TITLES.length-1,Math.floor(L/5))];
 const week=d=>Math.floor((d+3)/7); // Wochen beginnen montags
 // Serie zählt, solange das Tagesziel gestern erreicht wurde; ein verpasster Tag pro Woche wird als Ruhetag überbrückt
 const restOk=T=>P.goalDay===T-2&&P.restWeek!==week(T-1);
 const streakNow=()=>{const T=today();return P.goalDay>=T-1||restOk(T)?P.streak:0};
-function addXp(n){
-  const T=today();if(P.day!==T){P.day=T;P.dayXp=0}
-  const had=P.dayXp>=P.goal;P.xp+=n;P.dayXp+=n;
+function newDay(){const T=today();if(P.day!==T){P.day=T;P.dayXp=0;P.dayQ=0}return T}
+function addXp(n){newDay();P.xp+=n;P.dayXp+=n;if(!P.since)P.since=today();saveProfile()}
+// Tagesziel in beantworteten Fragen (richtig oder falsch), damit der Aufwand greifbar ist; die Serie hängt daran
+function addQ(){
+  const T=newDay(),had=P.dayQ>=P.goalQ;P.dayQ++;
   let reached=false;
-  if(!had&&P.dayXp>=P.goal){
+  if(!had&&P.dayQ>=P.goalQ){
     if(P.goalDay===T-1)P.streak++;
     else if(restOk(T)){P.streak++;P.restWeek=week(T-1)}
     else if(P.goalDay!==T)P.streak=1;
@@ -69,7 +70,7 @@ function addXp(n){
   }
   saveProfile();return reached;
 }
-const dayXp=()=>P.day===today()?P.dayXp:0;
+const dayQ=()=>P.day===today()?P.dayQ||0:0;
 
 // Klänge „Holz“: Marimba-Töne, direkt im Browser erzeugt (keine Audiodateien). Stummschalten auf der Startseite, gemerkt in orbista.profile.sound
 let AC=null,OUT=null;
@@ -103,26 +104,34 @@ const SFX={
 function play(k,delay=0){if(!soundOn())return;try{if(!ac())return;delay?setTimeout(()=>SFX[k](),delay):SFX[k]()}catch(e){}}
 
 // Spielarten: der geführte Ablauf wählt sie selbst; beim gezielten Üben nur „Auswählen“ oder „Eintippen“
-const MODE_NAME={f2l:"Flagge → Land",l2f:"Land → Flagge",type:"Land tippen",l2c:"Land → Hauptstadt",c2l:"Hauptstadt → Land",ctype:"Hauptstadt tippen",f2c:"Flagge → Hauptstadt",fctype:"Hauptstadt zur Flagge tippen"};
-const CAPMODES=["l2c","c2l","ctype","f2c","fctype"], TYPEMODES=["type","ctype","fctype"], BOTHMODES=["f2c","fctype"];
-const kindOf=m=>CAPMODES.includes(m)?"c":"f";
+const MODE_NAME={pie:"Farbkreis",two:"Zwei in Teilen",hole:"Schlüsselloch",fake:"Echt oder falsch",f2l:"Flagge → Land",l2f:"Land → Flagge",type:"Land tippen",l2c:"Land → Hauptstadt",c2l:"Hauptstadt → Land",ctype:"Hauptstadt tippen",f2c:"Flagge → Hauptstadt",fctype:"Hauptstadt zur Flagge tippen",loc:"Land auf der Karte antippen",mark:"Markiertes Land → Name",mtype:"Markiertes Land tippen"};
+const CAPMODES=["l2c","c2l","ctype","f2c","fctype"], MAPMODES=["loc","mark","mtype"], TYPEMODES=["type","ctype","fctype","mtype"], BOTHMODES=["f2c","fctype"];
+const kindOf=m=>CAPMODES.includes(m)?"c":MAPMODES.includes(m)?"m":"f";
+// Kreative Spielarten zählen für die Flaggen-Karte (nur Auswählen). Daten aus src/kreativ.js (tools/kreativ.py):
+// Farbanteile, Schlüsselloch-Punkte, spiegelgleiche Flaggen und die Einzelteile abstrakter Flaggen (ohne Wappen und Bildzeichen)
+const KR=window.ORBISTA_KREATIV, KREATIV=["pie","two","hole","fake"];
+const kreativFor=c=>KREATIV.filter(m=>m!=="two"||KR.parts[c]);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
-const KIND={f:"Flaggen",c:"Hauptstädte"};
+const KIND={f:"Flaggen",c:"Hauptstädte",m:"Landkarte"};
+const KINDS=["f","c","m"];
 const svg=(d,cls="ic")=>`<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 const ICON={flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',pin:'<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
-  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',clock:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M10 2h4"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',clock:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M10 2h4"/>',map:'<path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/>',
   chev:'<path d="M9 6l6 6-6 6"/>',check:'<path d="M4 12l5 5L20 6"/>',lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'};
-const TOPICS=[["flag","Flaggen",ICON.flag],["cap","Hauptstädte",ICON.pin],["both","Beides",ICON.globe]];
-const kindsOf=t=>t==="flag"?["f"]:t==="cap"?["c"]:["f","c"];
-const GOALS=[[30,"Locker","ein paar Fragen"],[50,"Regelmäßig","etwa eine halbe Runde"],[100,"Ehrgeizig","etwa eine ganze Runde"]];
+// Thema für „Weiterreisen“; „both“ heißt seit der Landkarte „Alles“ (Schlüssel bleibt für alte Profile)
+const TOPICS=[["flag","Flaggen",ICON.flag],["cap","Hauptstädte",ICON.pin],["map","Landkarte",ICON.map],["both","Alles",ICON.globe]];
+const kindsOf=t=>t==="flag"?["f"]:t==="cap"?["c"]:t==="map"?["m"]:KINDS;
+const topicText=t=>t==="flag"?"Flaggen":t==="cap"?"Hauptstädte":t==="map"?"Länder auf der Landkarte":"Flaggen, Hauptstädte und die Landkarte";
+const GOALS=[[5,"Locker","5 Fragen am Tag","2 Min."],[10,"Regelmäßig","10 Fragen, eine Runde","4 Min."],[20,"Ehrgeizig","20 Fragen, zwei Runden","8 Min."]];
 const ROUND=10, ORDER=["Europa","Nordamerika","Südamerika","Asien","Afrika","Ozeanien"];
 const poolOf=r=>r==="Alle"?ALL:REGIONS[r].split(" ");
 const regionName=r=>r==="Alle"?"Ganze Welt":r;
 const isDue=(k,c)=>{const m=card(k,c);return !!m&&m.due<=today()&&m.s<3};
 
-// Zeitrennen: feste Strecke gegen die Uhr, jeder Fehler kostet 5 Sekunden, freigeschaltet ab Level 2
-const PENALTY=5000, RACE_LEVEL=2;
-const raceOpen=()=>levelOf(P.xp)>=RACE_LEVEL;
+// Zeitrennen: feste Strecke gegen die Uhr, jeder Fehler kostet 5 Sekunden, freigeschaltet mit dem ersten Visum
+// (wer schon eine Bestzeit hat, behält den Zugang)
+const PENALTY=5000;
+const raceOpen=()=>Object.keys(P.stamps||{}).length>0||Object.keys(P.best||{}).length>0;
 const fmt=ms=>{const t=Math.round(ms/100),m=Math.floor(t/600),sec=Math.floor(t/10)%60;return `${m}:${String(sec).padStart(2,"0")},${t%10}`};
 const secs=ms=>(ms/1000).toFixed(1).replace(".",",")+" s";
 
@@ -134,30 +143,37 @@ function show(id){
   scrollTo(0,0);
 }
 
-// Erster Start: Thema und Tagesziel, beides später änderbar
-let W={topic:"both",goal:50};
+// Erster Start: Thema, Tagesziel und Startregion, alles später änderbar
+let W={topic:"both",goal:10,start:"Europa"};
 function renderWelcome(){
   $("wTopics").innerHTML=TOPICS.map(([id,t,ic])=>`<button data-t="${id}" aria-pressed="${W.topic===id}">${svg(ic,"")}${t}</button>`).join("");
-  $("wGoals").innerHTML=GOALS.map(([g,t,d])=>`<button class="line goalline" data-g="${g}" aria-pressed="${W.goal===g}"><span class="tx">${W.goal===g?svg(ICON.check,"check"):""}<b>${t}</b><small>${d}</small></span><small>${g} XP</small></button>`).join("");
+  $("wGoals").innerHTML=GOALS.map(([g,t,d,m])=>`<button class="line goalline" data-g="${g}" aria-pressed="${W.goal===g}"><span class="tx">${W.goal===g?svg(ICON.check,"check"):""}<b>${t}</b><small>${d}</small></span><small>etwa ${m}</small></button>`).join("");
+  $("wStart").innerHTML=[...ORDER,"Alle"].map(r=>`<button class="chip" data-r="${r}" aria-pressed="${W.start===r}">${regionName(r)}</button>`).join("");
 }
-function openWelcome(){W={topic:P.topic||"both",goal:[30,50,100].includes(P.goal)?P.goal:50};renderWelcome();show("welcome")}
+function openWelcome(){W={topic:P.topic||"both",goal:[5,10,20].includes(P.goalQ)?P.goalQ:10,start:ORDER.includes(P.start)||P.start==="Alle"?P.start:"Europa"};renderWelcome();show("welcome")}
 $("wTopics").onclick=e=>{const b=e.target.closest("[data-t]");if(b){W.topic=b.dataset.t;renderWelcome()}};
 $("wGoals").onclick=e=>{const b=e.target.closest("[data-g]");if(b){W.goal=+b.dataset.g;renderWelcome()}};
-$("begin").onclick=()=>{P.topic=W.topic;P.goal=W.goal;saveProfile();goHome()};
+$("wStart").onclick=e=>{const b=e.target.closest("[data-r]");if(b){W.start=b.dataset.r;renderWelcome()}};
+// Beim ersten Start geht es direkt in die erste Runde, die Startseite kommt erst danach.
+$("begin").onclick=()=>{const first=!P.topic;P.topic=W.topic;P.goalQ=W.goal;P.start=W.start;saveProfile();if(first)startAuto();else goHome()};
 
 // Weiterreisen: Orbista stellt die Runde selbst zusammen. Zuerst fällige Karten (wenige Sterne vorn),
-// dann neue aus der ersten Region, die noch Unbekanntes hat, dann die übrigen nach Fälligkeit.
+// dann neue aus der ersten Region, die noch Unbekanntes hat (ab der gewählten Startregion `P.start`; bei „Alle“ aus der ganzen Welt), dann die übrigen nach Fälligkeit.
 // Ab zwei Sternen wird getippt, vorher ausgewählt.
+// Kreative Spielarten: in „Weiterreisen“ bei etwa jeder dritten Flagge, die man schon einmal richtig hatte; gezielt unter „Knifflig“
 function modeFor(k,c,typing,both){
+  if(k==="f"&&(typing==="kniff"||typing===null&&stars(k,c)>=1&&Math.random()<.35))return pick(kreativFor(c));
   const t=typing===null?stars(k,c)>=2:typing;
   if(k==="f")return t?"type":pick(["f2l","l2f"]);
+  if(k==="m")return t?"mtype":pick(["loc","mark"]);
   return t?(both?pick(["ctype","fctype"]):"ctype"):pick(both?["l2c","c2l","f2c"]:["l2c","c2l"]);
 }
 function autoPlan(){
   const ks=kindsOf(P.topic||"both"),cards=[];
   for(const k of ks)for(const c of ALL)cards.push([k,c]);
   const due=shuffle(cards.filter(([k,c])=>isDue(k,c))).sort((a,b)=>stars(a[0],a[1])-stars(b[0],b[1]));
-  const region=ORDER.find(r=>ks.some(k=>poolOf(r).some(c=>!card(k,c))))||"Alle";
+  const order=ORDER.includes(P.start)?[P.start,...ORDER.filter(r=>r!==P.start)]:ORDER;
+  const region=P.start==="Alle"?"Alle":order.find(r=>ks.some(k=>poolOf(r).some(c=>!card(k,c))))||"Alle";
   const fresh=shuffle(cards.filter(([k,c])=>!card(k,c)&&(region==="Alle"||C[c].region===region)));
   const rest=cards.filter(([k,c])=>card(k,c)&&!isDue(k,c)).sort((a,b)=>card(a[0],a[1]).due-card(b[0],b[1]).due);
   const list=[...due,...fresh,...rest].slice(0,ROUND);
@@ -167,38 +183,63 @@ function autoPlan(){
 // Startseite
 let plan=null;
 function renderHome(){
-  const L=levelOf(P.xp),b=xpFor(L+1),dx=dayXp(),d=Math.min(dx,P.goal),sk=streakNow(),r=28,u=2*Math.PI*r,left=P.goal-dx;
-  $("lvlPill").textContent=`Level ${L} · ${titleOf(L)}`;
-  renderSound();
-  $("status").innerHTML=`<button class="goal" id="goalBtn" aria-label="Tagesziel ${dx} von ${P.goal} XP, antippen zum Ändern"><svg viewBox="0 0 68 68" aria-hidden="true"><circle cx="34" cy="34" r="${r}" class="ring0"/><circle cx="34" cy="34" r="${r}" class="ring1" stroke-dasharray="${u*d/P.goal} ${u}"/></svg><b>${dx}</b></button>
-  <div class="todaytxt"><b>Deine Reise heute</b><span>${left>0?`${dx} von ${P.goal} XP · noch ${left} bis zum Tagesziel`:`Tagesziel geschafft · ${dx} XP`}</span><span class="streak">Serie: <b>${sk}</b> ${sk===1?"Tag":"Tage"} · ${b-P.xp} XP bis Level ${L+1}</span></div>`;
+  const dx=dayQ(),g=P.goalQ,d=Math.min(dx,g),sk=streakNow(),r=28,u=2*Math.PI*r,left=g-dx;
+  renderSound();renderWorld();
+  $("status").innerHTML=`<button class="goal" id="goalBtn" aria-label="Tagesziel ${dx} von ${g} Fragen, antippen zum Ändern"><svg viewBox="0 0 68 68" aria-hidden="true"><circle cx="34" cy="34" r="${r}" class="ring0"/><circle cx="34" cy="34" r="${r}" class="ring1" stroke-dasharray="${u*d/g} ${u}"/></svg><b>${dx}</b></button>
+  <div class="todaytxt"><b>Deine Reise heute</b><span>${left>0?`${dx} von ${g} Fragen · noch ${left} bis zum Tagesziel`:`Tagesziel geschafft · ${dx} Fragen`}</span><span class="streak">Serie: <b>${sk}</b> ${sk===1?"Tag":"Tage"} · ${Object.keys(P.stamps||{}).length} von ${KINDS.length*ORDER.filter(r=>REGIONS[r]).length} Visa</span></div>`;
   plan=autoPlan();
   const n=plan.items.length;
   $("goSub").textContent=plan.due>=n?`${n} Wiederholungen`:`${n} Fragen · ${regionName(plan.region)}`+(plan.due?` · ${plan.due} zum Wiederholen`:"");
   const cnt=k=>ALL.filter(c=>known(k,c)).length, times=Object.values(P.best||{});
   const row=(p,ic,t,sub,off)=>`<button class="line" data-p="${p}"${off?" disabled":""}>${svg(ic)}<span class="tx"><b>${t}</b><span>${sub}</span></span>${svg(off?ICON.lock:ICON.chev,"chev")}</button>`;
-  $("paths").innerHTML=row("f",ICON.flag,"Flaggen",`${cnt("f")} von ${ALL.length} gekonnt`)+row("c",ICON.pin,"Hauptstädte",`${cnt("c")} von ${ALL.length} gekonnt`)
-    +row("race",ICON.clock,"Zeitrennen",!raceOpen()?`Ab Level ${RACE_LEVEL}`:times.length?`Schnellste Runde ${fmt(Math.min(...times))}`:"Zehn Fragen gegen die Uhr",!raceOpen());
-  $("topicLine").innerHTML=`„Weiterreisen“ fragt ${P.topic==="flag"?"Flaggen":P.topic==="cap"?"Hauptstädte":"Flaggen und Hauptstädte"}. <button class="link" id="changeTopic">Ändern</button>`+codeLine();
+  $("paths").innerHTML=row("f",ICON.flag,"Flaggen",`${cnt("f")} von ${ALL.length} gekonnt`)+row("c",ICON.pin,"Hauptstädte",`${cnt("c")} von ${ALL.length} gekonnt`)+row("m",ICON.map,"Landkarte",`${cnt("m")} von ${ALL.length} gekonnt`)
+    +row("race",ICON.clock,"Zeitrennen",!raceOpen()?"Ab dem ersten Visum im Reisepass":times.length?`Schnellste Runde ${fmt(Math.min(...times))}`:"Zehn Fragen gegen die Uhr",!raceOpen());
+  $("topicLine").innerHTML=`„Weiterreisen“ fragt ${topicText(P.topic)}. <button class="link" id="changeTopic">Ändern</button>`+codeLine();
 }
 function goHome(){renderHome();show("home")}
-$("status").onclick=e=>{if(e.target.closest("#goalBtn")){P.goal=P.goal===30?50:P.goal===50?100:30;saveProfile();renderHome()}};
+
+// Deine Welt: Punktkarte (src/dots.js aus tools/dots.py). Zählt immer alle drei Karten, unabhängig vom Thema:
+// entdeckt ab einem Stern, heller je gekonnter Karte (p1, p2), gold bei allen drei (s2)
+function renderWorld(){
+  const D=window.ORBISTA_DOTS,ks=KINDS,T=today(),cnt=[0,0,0,0],fresh=[];let got=0;
+  const dots=Object.entries(D.c).map(([c,cells])=>{
+    const g=ks.filter(k=>stars(k,c)>=2).length,seen=ks.some(k=>stars(k,c)>=1),cls=g===ks.length?"s2":g?"p"+g:seen?"s1":"s0";
+    const isNew=seen&&ks.some(k=>{const m=card(k,c);return m&&m.d1===T});
+    got+=g;cnt[g===ks.length?3:g?2:seen?1:0]++;if(isNew)fresh.push(c);
+    return cells.map(i=>`<circle class="${cls}${isNew?" n":""}" cx="${i%D.cols+.5}" cy="${Math.floor(i/D.cols)+.5}" r=".4"/>`).join("");
+  }).join("");
+  const all=cnt.reduce((a,b)=>a+b),names=fresh.map(c=>C[c].name).sort((a,b)=>a.localeCompare(b,"de"));
+  const list=names.length<=3?names.join(", ").replace(/, ([^,]*)$/," und $1"):`${names.slice(0,2).join(", ")} und ${names.length-2} weitere`;
+  $("world").innerHTML=`<div class="worldhead"><h2>Deine Welt</h2><b>${Math.round(100*got/(all*ks.length))} %</b></div>
+  <svg class="dots" viewBox="0 0 ${D.cols} ${D.rows}" role="img" aria-label="Weltkarte: ${all-cnt[0]} von ${all} Ländern entdeckt, ${cnt[3]} in allen Karten gekonnt">${dots}</svg>
+  <div class="worldkey"><span><i class="k2"></i>${cnt[3]} ganz gekonnt</span><span><i class="kp"></i>${cnt[2]} teils gekonnt</span><span><i class="k1"></i>${cnt[1]} entdeckt</span><span><i class="k0"></i>${cnt[0]} noch unbekannt</span></div>
+  ${fresh.length?`<p class="worldnew"><b>Heute neu auf der Karte:</b> ${list}</p>`:""}`;
+}
+$("status").onclick=e=>{if(e.target.closest("#goalBtn")){P.goalQ=P.goalQ===5?10:P.goalQ===10?20:5;saveProfile();renderHome()}};
 // Mit Reise-Code (Anmeldeseite auf der Website) steht der Code unter dem Thema, mit Link zum Wechseln
 function codeLine(){let c=null;try{c=localStorage.getItem("orbista-code")}catch(e){}
   return c&&/^[A-Z0-9-]{4,24}$/.test(c)?`<br>Reise-Code ${c} · <a class="link" id="switchCode" href="./?wechseln">Wechseln</a>`:""}
 $("topicLine").onclick=e=>{if(e.target.id==="changeTopic")openWelcome()};
 $("go").onclick=()=>startAuto();
 const SPK='<path d="M4 9h4l5-4v14l-5-4H4z"/>';
-function renderSound(){const on=soundOn();$("soundBtn").setAttribute("aria-pressed",String(on));$("soundBtn").setAttribute("aria-label",on?"Klänge ausschalten":"Klänge einschalten");
-  $("soundBtn").innerHTML=svg(SPK+(on?'<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>':'<path d="M16 9l5 6M21 9l-5 6"/>'),"")}
-$("soundBtn").onclick=()=>{P.sound=!soundOn();saveProfile();renderSound();play("tap")};
+// Lautsprecher-Knopf auf jeder Seite (Startseite, Gezielt üben, Frage, Ergebnis, Reisepass), alle zeigen denselben Zustand
+const sndBtn=()=>`<button class="iconbtn sndbtn"></button>`;
+function renderSound(){const on=soundOn();document.querySelectorAll(".sndbtn").forEach(b=>{b.setAttribute("aria-pressed",String(on));b.setAttribute("aria-label",on?"Klänge ausschalten":"Klänge einschalten");
+  b.innerHTML=svg(SPK+(on?'<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>':'<path d="M16 9l5 6M21 9l-5 6"/>'),"")})}
+document.addEventListener("click",e=>{if(e.target.closest(".sndbtn")){P.sound=!soundOn();saveProfile();renderSound();play("tap")}});
+// Hell/Dunkel-Umschalter auf jeder Seite neben dem Lautsprecher (im Erststart allein): Standard dunkel, nur auf diesem Gerät gemerkt (orbista.theme, nicht im Reise-Code)
+const themeBtn=()=>`<button class="iconbtn themebtn"></button>`;
+const isDark=()=>document.documentElement.dataset.theme==="dark";
+function renderTheme(){const d=isDark();document.querySelectorAll(".themebtn").forEach(b=>{b.setAttribute("aria-pressed",String(d));b.setAttribute("aria-label",d?"Hellen Modus einschalten":"Dunklen Modus einschalten");
+  b.innerHTML=svg(d?'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>':'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',"")})}
+document.addEventListener("click",e=>{if(e.target.closest(".themebtn")){const d=!isDark();document.documentElement.dataset.theme=d?"dark":"light";try{localStorage.setItem("orbista.theme",d?"dark":"light")}catch(x){}renderTheme()}});
 // leises Klicken bei Knöpfen; Antworten klingen über richtig oder falsch
-document.addEventListener("click",e=>{const b=e.target.closest("button");if(b&&!b.disabled&&!b.classList.contains("opt")&&b.id!=="soundBtn"&&!b.closest("#tf"))play("tap")});
-$("paths").onclick=e=>{const b=e.target.closest("[data-p]");if(b&&!b.disabled){S.path=b.dataset.p;if(S.path!=="race")S.kind=S.path;renderSetup();show("setup")}};
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(b&&!b.disabled&&!b.classList.contains("opt")&&!b.classList.contains("sndbtn")&&!b.closest("#tf"))play("tap")});
+$("paths").onclick=e=>{const b=e.target.closest("[data-p]");if(b&&!b.disabled){S.path=b.dataset.p;if(S.path!=="race")S.kind=S.path;else if(S.kind==="m")S.kind="f";renderSetup();show("setup")}};
 $("tabs").onclick=e=>{const b=e.target.closest("[data-tab]");if(!b)return;if(b.dataset.tab==="pass"){renderPass();show("pass")}else goHome()};
 
 // Gezielt üben: Region und Antwortart wählen, mehr nicht
-let S={path:"f",kind:"f",region:"Europa",typing:false};
+let S={path:"f",kind:"f",region:"Europa",typing:false,tricky:false};
 const raceMode=()=>S.kind==="f"?(S.typing?"type":"f2l"):(S.typing?"ctype":"l2c");
 const raceKey=()=>[raceMode(),S.region,ROUND].join("|");
 function renderSetup(){
@@ -209,17 +250,121 @@ function renderSetup(){
   $("raceKinds").innerHTML=["f","c"].map(x=>`<button data-k="${x}" aria-pressed="${k===x}">${KIND[x]}</button>`).join("");
   $("regions").innerHTML=[...Object.keys(REGIONS),"Alle"].map(r=>{const pool=poolOf(r),n=pool.filter(c=>known(k,c)).length;
     return `<button class="line" data-r="${r}" aria-pressed="${S.region===r}"><span class="row1"><b>${regionName(r)}</b><span>${n} von ${pool.length}</span></span><span class="meter"><i style="width:${100*n/pool.length}%"></i></span></button>`}).join("");
-  $("answers").innerHTML=[[0,"Auswählen"],[1,"Eintippen"]].map(([v,t])=>`<button data-a="${v}" aria-pressed="${S.typing===!!v}">${t}</button>`).join("");
+  const tricky=S.tricky&&k==="f"&&!race;
+  $("answers").innerHTML=[[0,"Auswählen"],[1,"Eintippen"],...(k==="f"&&!race?[[2,"Knifflig"]]:[])].map(([v,t])=>`<button data-a="${v}" aria-pressed="${v===2?tricky:!tricky&&S.typing===!!v}">${t}</button>`).join("");
+  $("answers").classList.toggle("three",k==="f"&&!race);
   const best=(P.best||{})[raceKey()];
-  $("answerHint").textContent=race?(best?`Deine Bestzeit für diese Strecke: ${fmt(best)}`:"Noch keine Bestzeit für diese Strecke."):"Eintippen gibt doppelte XP und zählt für den dritten Stern.";
+  $("answerHint").textContent=race?(best?`Deine Bestzeit für diese Strecke: ${fmt(best)}`:"Noch keine Bestzeit für diese Strecke."):k==="m"?(S.typing?"Ein Land leuchtet auf, du tippst seinen Namen. Das zählt für den dritten Stern.":"Mal tippst du das Land auf der Karte an, mal wählst du den Namen zum markierten Land."):tricky?"Farbkreis, zwei Flaggen in Teilen, Schlüsselloch oder echt oder falsch.":"Eintippen zählt für den dritten Stern.";
   const due=poolOf(S.region).filter(c=>isDue(k,c)).length;
   $("setupGoSub").textContent=`${regionName(S.region)} · ${ROUND} Fragen`+(due&&!race?` · ${due} zum Wiederholen`:"");
 }
 $("setupBack").onclick=()=>goHome();
 $("raceKinds").onclick=e=>{const b=e.target.closest("[data-k]");if(b){S.kind=b.dataset.k;renderSetup()}};
 $("regions").onclick=e=>{const b=e.target.closest("[data-r]");if(b){S.region=b.dataset.r;renderSetup()}};
-$("answers").onclick=e=>{const b=e.target.closest("[data-a]");if(b){S.typing=b.dataset.a==="1";renderSetup()}};
+$("answers").onclick=e=>{const b=e.target.closest("[data-a]");if(b){S.typing=b.dataset.a==="1";S.tricky=b.dataset.a==="2";renderSetup()}};
 $("setupGo").onclick=()=>startSetup();
+
+// Landkarte: eine einzige SVG-Karte (Natural Earth, src/map.js), die je Frage auf die Region der Frage schwenkt.
+// Kleinstaaten bekommen einen Kreis zum Antippen; mit + und − zoomen, mit dem Finger verschieben.
+// Die Karte zoomt nie von selbst (Mark: man soll sehen, wo ein Land im Verhältnis zu den anderen liegt);
+// ein kleines markiertes Land bekommt stattdessen einen Pfeil.
+const MAP=window.ORBISTA_MAP;
+let MAP_VIEW=null;
+// Gradnetz alle 10° in derselben Projektion wie tools/map.py (Natural Earth I), bis 360° für das verschobene Ozeanien
+function gridPath(){
+  const P=(lon,lat)=>{const p=lat*Math.PI/180,l=lon*Math.PI/180,p2=p*p,p4=p2*p2;
+    return Math.round(800*l*(.8707-.131979*p2+p4*(-.013791+p4*(.003971*p2-.001529*p4))))+" "+Math.round(-800*p*(1.007226+p2*(.015085+p4*(-.044475+.028874*p2-.005916*p4))))};
+  const line=pts=>"M"+pts.map(([a,b])=>P(a,b)).join("L"),r=(a,b,s)=>Array.from({length:Math.floor((b-a)/s)+1},(_,i)=>a+i*s);
+  return r(-180,360,10).map(lon=>line(r(-80,80,5).map(lat=>[lon,lat]))).join("")+r(-80,80,10).map(lat=>line(r(-180,360,5).map(lon=>[lon,lat]))).join("")}
+// Nachbarn für die Auswahl beim markierten Land: die nächsten Länder nach Kartenabstand
+function near(code){const [x,y]=MAP.box[code]||[0,0];
+  const d=c=>{const b=MAP.box[c];return b?Math.hypot(b[0]-x,b[1]-y):1e9};
+  return shuffle(ALL.filter(c=>c!==code).sort((a,b)=>d(a)-d(b)).slice(0,6)).slice(0,3)}
+// Kreative Spielarten: Farbfamilien vergleichen, damit der Farbkreis eindeutig bleibt und bei „Zwei in Teilen“ die Flaggen Farben teilen
+const rgbOf=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+function fam(h){const [r,g,b]=rgbOf(h).map(v=>v/255),mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;
+  if(d<.15)return (mx+mn)/2>.6?"w":"k";
+  const hu=((mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4)*60+360)%360;
+  return hu<20||hu>=330?"r":hu<45?"o":hu<70?"y":hu<170?"g":"b"}
+function pieVec(c){const v={};KR.pie[c].forEach(([h,p])=>v[fam(h)]=(v[fam(h)]||0)+p);return v}
+function pieDist(a,b){const A=pieVec(a),B=pieVec(b);let d=0;for(const k of new Set([...Object.keys(A),...Object.keys(B)]))d+=Math.abs((A[k]||0)-(B[k]||0));return d}
+const fams=c=>new Set(KR.pie[c].map(p=>fam(p[0])));
+const sharesColor=(a,b)=>{const B=fams(b);return [...fams(a)].some(f=>B.has(f))};
+// Auswahl wie bei den anderen Fragen (zuerst dieselbe Region), aber nur Länder, die zur Bedingung passen
+function similar(code,n,okFn){
+  const pool=G&&G.pool||poolOf(C[code].region),reg=C[code].region;
+  const pref=shuffle(pool.filter(x=>x!==code&&okFn(x))).sort((x,y)=>(C[x].region===reg?0:1)-(C[y].region===reg?0:1));
+  const more=shuffle(ALL.filter(x=>x!==code&&!pref.includes(x)&&okFn(x)));
+  return [...pref,...more].slice(0,n)}
+function pieSvg(c){
+  const sh=KR.pie[c],tot=sh.reduce((a,x)=>a+x[1],0),P=t=>[(100+92*Math.cos(t)).toFixed(1),(100+92*Math.sin(t)).toFixed(1)];let a=-Math.PI/2;
+  return `<svg class="pie" viewBox="0 0 200 200" role="img" aria-label="Farbanteile">${sh.map(([h,p])=>{const f=p/tot,a2=a+f*2*Math.PI,d=f>.999?`<circle cx="100" cy="100" r="92" fill="${h}"/>`:`<path fill="${h}" d="M100 100L${P(a)}A92 92 0 ${f>.5?1:0} 1 ${P(a2)}z"/>`;a=a2;return d}).join("")}</svg>`}
+// Echt oder falsch: Farben im SVG-Text vertauschen oder ersetzen, oder spiegeln (nur bei Flaggen, die gespiegelt anders aussehen)
+const svgText=c=>{const u=flag(c),b=atob(u.slice(u.indexOf(",")+1));try{return decodeURIComponent(escape(b))}catch(e){return b}};
+const svgUrl=t=>"data:image/svg+xml;charset=utf-8,"+encodeURIComponent(t);
+let probe=null;
+function toRgb(v){probe=probe||document.createElement("i");probe.style.color="";probe.style.color=v;if(!probe.style.color)return null;
+  document.body.appendChild(probe);const m=getComputedStyle(probe).color.match(/\d+/g);probe.remove();return m?m.slice(0,3).map(Number):null}
+function recolor(t,map){
+  const sub=v=>{if(v==="none"||v.startsWith("url"))return v;const rgb=toRgb(v);if(!rgb)return v;let best=null,bd=75;
+    for(const [f,to] of map){const d=Math.hypot(rgb[0]-f[0],rgb[1]-f[1],rgb[2]-f[2]);if(d<bd){bd=d;best=to}}return best||v};
+  return t.replace(/(fill|stroke|stop-color)="([^"]+)"/g,(m,a,v)=>`${a}="${sub(v)}"`).replace(/(fill|stroke|stop-color):\s*([^;"]+)/g,(m,a,v)=>`${a}:${sub(v)}`)}
+const POOL_COL=["#d52b1e","#0b3c8c","#1f7a3a","#f7c600","#111111","#ffffff","#ff8200","#6cace4"];
+function fakes(c){
+  const t=svgText(c),pal=KR.pie[c].map(p=>p[0]),rgb=pal.map(rgbOf),out=[],seen=new Set([t]);
+  const add=(svg,why,flip)=>{const key=svg+(flip?"|f":"");if(seen.has(key))return;seen.add(key);out.push({src:svgUrl(svg),why,flip})};
+  if(pal.length>=2){const [i,j]=shuffle([...pal.keys()]);add(recolor(t,[[rgb[i],pal[j]],[rgb[j],pal[i]]]),"Zwei Farben sind vertauscht.")}
+  const fresh=shuffle(POOL_COL.filter(h=>rgb.every(r=>{const x=rgbOf(h);return Math.hypot(r[0]-x[0],r[1]-x[1],r[2]-x[2])>120})));
+  shuffle([...pal.keys()]).forEach((i,k)=>{if(fresh[k])add(recolor(t,[[rgb[i],fresh[k]]]),"Eine Farbe ist falsch.")});
+  if(!KR.sym.includes(c))add(t,"Sie ist gespiegelt.",true);
+  const pickd=shuffle(out).slice(0,3);
+  while(pickd.length<3)pickd.push({src:flag(c),why:"Die Farben sind verschoben.",hue:60*(pickd.length+1)});
+  return pickd}
+function mapView(){
+  if(!MAP_VIEW){
+    const el=document.createElement("div");el.className="mapbox";el.id="map";
+    const small=ALL.filter(c=>MAP.box[c]&&MAP.box[c][2]<40);
+    const land=`<path d="${MAP.bg}"/>${Object.values(MAP.p).map(d=>`<path d="${d}"/>`).join("")}`;
+    el.innerHTML=`<svg role="img" aria-label="Landkarte" preserveAspectRatio="xMidYMid meet"><defs><g id="mapLand">${land}</g></defs><path class="grid" d="${gridPath()}"/>${[3,2,1].map(i=>`<use href="#mapLand" class="wl wl${i}"/>`).join("")}<path class="bg" d="${MAP.bg}"/>${Object.keys(MAP.p).map(c=>`<path class="c${MAP.isl.includes(c)?" isl":""}" data-c="${c}" d="${MAP.p[c]}"/>`).join("")}${small.map(c=>`<circle class="dot" data-c="${c}" cx="${MAP.box[c][0]}" cy="${MAP.box[c][1]}" r="4"/>`).join("")}<g class="arrow" hidden><circle/><path/></g></svg>
+      <div class="zoom"><button type="button" data-z=".6" aria-label="Näher heran">+</button><button type="button" data-z="1.66" aria-label="Weiter weg">−</button></div>`;
+    const svg=el.querySelector("svg"),arrow=el.querySelector(".arrow");let home=[0,0,1,1],vb=home,target=null;
+    // Pfeil in fester Bildschirmgröße (k = Karteneinheiten pro Pixel), von der Kartenmitte her auf das Land, mit Ring darum;
+    // nur solange das Land auf dem Bildschirm kleiner als 24 px ist
+    const drawArrow=k=>{const b=target&&MAP.box[target];const off=!b||b[2]/k>=24;arrow.toggleAttribute("hidden",off);if(off)return;
+      const [x,y]=b,ring=Math.max(10*k,b[2]/2+4*k),cx=vb[0]+vb[2]/2,cy=vb[1]+vb[3]/2;
+      let dx=cx-x,dy=cy-y,l=Math.hypot(dx,dy);if(l<1){dx=1;dy=-1;l=Math.SQRT2}dx/=l;dy/=l;
+      const len=46*k,hx=x+dx*(ring+3*k),hy=y+dy*(ring+3*k),tx=hx+dx*len,ty=hy+dy*len,w=7*k,bx=hx+dx*12*k,by=hy+dy*12*k;
+      arrow.firstChild.setAttribute("cx",x);arrow.firstChild.setAttribute("cy",y);arrow.firstChild.setAttribute("r",ring);
+      arrow.lastChild.setAttribute("d",`M${tx} ${ty}L${bx} ${by}M${hx} ${hy}L${bx-dy*w} ${by+dx*w}L${bx+dy*w} ${by-dx*w}Z`)};
+    // Kreise immer etwa gleich groß auf dem Bildschirm; sichtbar nur, solange das Land selbst zu klein zum Antippen ist
+    const set=v=>{vb=v;svg.setAttribute("viewBox",v.join(" "));const k=v[2]/(svg.clientWidth||360);
+      el.querySelectorAll(".dot").forEach(d=>{const s=MAP.box[d.dataset.c][2]/k;d.setAttribute("r",7*k);d.style.display=s<14?"":"none"});drawArrow(k)};
+    // Zoomen um einen Bildschirmpunkt (Faktor z < 1 = näher heran), begrenzt wie bei +/−
+    const zoomAt=(z,px,py)=>{const r=svg.getBoundingClientRect(),k=vb[2]/r.width,w=Math.min(home[2]*1.3,Math.max(home[2]/12,vb[2]*z)),f=w/vb[2],
+      mx=vb[0]+(px-r.left)*k,my=vb[1]+(py-r.top)*k;set([mx-(mx-vb[0])*f,my-(my-vb[1])*f,w,w*home[3]/home[2]])};
+    el.querySelector(".zoom").onclick=e=>{const z=+e.target.dataset.z;if(!z)return;const r=svg.getBoundingClientRect();zoomAt(z,r.left+r.width/2,r.top+r.height/2)};
+    // Ein Finger verschiebt, zwei Finger zoomen (Pinch), am Rechner Trackpad-Geste (Strg+Mausrad)
+    let drag=null,moved=0,pinch=null;const pts=new Map();
+    const two=()=>{const [a,b]=[...pts.values()];return [Math.hypot(a[0]-b[0],a[1]-b[1]),(a[0]+b[0])/2,(a[1]+b[1])/2]};
+    svg.addEventListener("pointerdown",e=>{pts.set(e.pointerId,[e.clientX,e.clientY]);
+      if(pts.size===2){pinch=two();drag=null;moved=99}else if(pts.size===1){drag=[e.clientX,e.clientY,vb[0],vb[1]];moved=0}});
+    svg.addEventListener("pointermove",e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,[e.clientX,e.clientY]);
+      if(pinch&&pts.size===2){const [d,x,y]=two(),k=vb[2]/svg.clientWidth;set([vb[0]-(x-pinch[1])*k,vb[1]-(y-pinch[2])*k,vb[2],vb[3]]);if(pinch[0]>0&&d>0)zoomAt(pinch[0]/d,x,y);pinch=[d,x,y];return}
+      if(!drag)return;const k=vb[2]/svg.clientWidth,dx=e.clientX-drag[0],dy=e.clientY-drag[1];moved=Math.max(moved,Math.abs(dx)+Math.abs(dy));
+      if(moved>8){svg.setPointerCapture&&svg.setPointerCapture(e.pointerId);set([drag[2]-dx*k,drag[3]-dy*k,vb[2],vb[3]])}});
+    const lift=e=>{pts.delete(e.pointerId);if(pts.size<2)pinch=null;if(pts.size===1){const [p]=[...pts.values()];drag=[p[0],p[1],vb[0],vb[1]]}};
+    const up=e=>{const t=pts.size===1&&moved<=8&&e.target.closest&&e.target.closest("[data-c]");lift(e);if(!pts.size)drag=null;
+      if(t&&G&&!G.locked&&G.mode==="loc"){const code=G.list[G.i].c;answer(t.dataset.c===code,code,t.dataset.c)}};
+    svg.addEventListener("pointerup",up);svg.addEventListener("pointercancel",e=>{lift(e);if(!pts.size)drag=null});
+    svg.addEventListener("wheel",e=>{if(!e.ctrlKey)return;e.preventDefault();zoomAt(Math.exp(e.deltaY*.01),e.clientX,e.clientY)},{passive:false});
+    MAP_VIEW={el,svg,
+      show(r){home=MAP.view[r];svg.style.aspectRatio=home[2]+"/"+home[3];el.classList.remove("tap");this.clear();target=null;set(home.slice())},
+      mark(c,cls){el.querySelectorAll(`[data-c="${c}"]`).forEach(x=>{x.classList.add(cls);if(x.tagName==="path")x.parentNode.insertBefore(x,el.querySelector(".dot"))})},
+      clear(){el.querySelectorAll(".hi,.ok,.bad").forEach(x=>x.classList.remove("hi","ok","bad"))},
+      point(c){target=c;set(vb)}};
+  }
+  return MAP_VIEW;
+}
 
 // Spiel
 let G=null;
@@ -231,12 +376,13 @@ function pickQuestions(k,pool,n){
 function startAuto(){const p=autoPlan();begin({items:p.items,restart:startAuto,next:"Weiterreisen"})}
 function startSetup(){
   const race=S.path==="race",pool=poolOf(S.region),both=false;
-  const items=pickQuestions(S.kind,pool,ROUND).map(c=>({c,m:race?raceMode():modeFor(S.kind,c,S.typing,both)}));
+  const tricky=S.tricky&&S.kind==="f";
+  const items=pickQuestions(S.kind,pool,ROUND).map(c=>({c,m:race?raceMode():modeFor(S.kind,c,tricky?"kniff":S.typing,both)}));
   begin({items,pool,race,key:race?raceKey():null,restart:startSetup,next:"Noch eine Runde"});
 }
 function begin(o){
   clearInterval(G&&G.clock);
-  G=Object.assign({race:false,times:[],penalty:0,i:0,right:0,streak:0,best:0,missed:[],locked:false,hint:0,xp:0,level:levelOf(P.xp),newStars:0,mastered:0,goal:false},o,{list:o.items});
+  G=Object.assign({race:false,times:[],penalty:0,i:0,right:0,streak:0,best:0,missed:[],locked:false,hint:0,xp:0,newStars:0,mastered:0,goal:false},o,{list:o.items});
   show("game");
   if(G.race)G.clock=setInterval(hud,100);
   next();
@@ -256,7 +402,7 @@ function hud(){
 function next(){
   clearTimeout(G.timer);
   if(G.i>=G.list.length) return finish();
-  const {c:code,m}=G.list[G.i];G.locked=false;G.hint=0;G.mode=m;G.kind=kindOf(m);
+  const {c:code,m}=G.list[G.i];G.locked=false;G.hint=0;G.mode=m;G.kind=kindOf(m);G.picks=[];
   $("prog").style.width=(100*G.i/G.list.length)+"%";
   G.qStart=performance.now();hud();
   const q=$("q");q.dataset.code=code;q.dataset.mode=m;
@@ -264,7 +410,7 @@ function next(){
   const fb=`<div class="fb" id="fb" aria-live="polite"></div>`;
   const big=`<div class="stage"><img class="flag" src="${flag(code)}" alt="Flagge"></div>`, small=`<img class="flag small" src="${flag(code)}" alt="Flagge">`;
   const txt=(list,key)=>`<div class="opts">${list.map(c=>`<button class="opt" data-c="${c}">${C[c][key]}</button>`).join("")}</div>`;
-  const typebox=ph=>`<form class="typebox" id="tf" autocomplete="off"><input id="ti" type="text" placeholder="${ph}" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done"><button class="btn" type="submit">OK</button></form><div class="row"><button class="btn ghost" id="hintBtn" type="button">Tipp</button><button class="btn ghost" id="skip" type="button">Weiß nicht</button></div>`;
+  const typebox=ph=>`<form class="typebox" id="tf" autocomplete="off"><input id="ti" type="text" placeholder="${ph}" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done"><button class="btn primary" type="submit">OK</button></form><div class="row"><button class="btn ghost" id="hintBtn" type="button">Tipp</button><button class="btn ghost" id="skip" type="button">Weiß nicht</button></div>`;
   const cd=card(G.kind,code),tag=!cd?"Neu":isDue(G.kind,code)?"Wiederholung":"";
   const kick=`<div class="label kicker">${C[code].region}${tag?" · "+tag:""}</div>`;
   const n=C[code].name;
@@ -276,14 +422,53 @@ function next(){
   else if(m==="c2l") h=`<h2>${C[code].cap} ist die Hauptstadt von …</h2>${txt(o(),"name")}`;
   else if(m==="ctype") h=`${small}<h2>Wie heißt die Hauptstadt von ${n}?</h2>${typebox("Hauptstadt eintippen")}`;
   else if(m==="f2c") h=`<h2>Welche Hauptstadt gehört zu dieser Flagge?</h2>${big}${txt(o(),"cap")}`;
+  else if(m==="pie") h=`<h2>Welche Flagge hat diese Farben?</h2><div class="stage">${pieSvg(code)}</div>${txt(shuffle([code,...similar(code,3,x=>pieDist(code,x)>.35)]),"name")}`;
+  else if(m==="two"){
+    // die zweite Flagge teilt mindestens eine Farbe; Auswahl aus sechs Ländern mit ähnlichen Farben
+    const c2=G.c2=similar(code,1,x=>KR.parts[x]&&sharesColor(code,x)&&pieDist(code,x)>.2)[0]||similar(code,1,x=>KR.parts[x])[0];q.dataset.c2=c2;
+    const opts=shuffle([code,c2,...similar(code,4,x=>x!==c2&&(sharesColor(code,x)||sharesColor(c2,x)))]);
+    h=`<h2>Welche zwei Flaggen liegen hier durcheinander?</h2><div class="stage parts"></div><p class="hint">Tippe beide Länder an.</p><div class="opts two">${opts.map(c=>`<button class="opt" data-c="${c}">${C[c].name}</button>`).join("")}</div>`}
+  else if(m==="hole") h=`<h2>Welche Flagge steckt dahinter?</h2><div class="stage"><div class="keyhole"><img class="flag" src="${flag(code)}" alt=""><i class="ring"></i></div></div><button class="btn ghost" id="holeBtn" type="button">Größeres Loch</button>${txt(o(),"name")}`;
+  else if(m==="fake"){
+    // die echte Flagge trägt das Länderkürzel, die veränderten ein eigenes
+    G.fakes=fakes(code);const list=shuffle([{c:code,src:flag(code)},...G.fakes.map((f,i)=>Object.assign({c:"fake"+i},f))]);
+    h=`<h2>Welche ist die echte Flagge von ${n}?</h2><div class="opts imgs">${list.map(f=>`<button class="opt imgopt" data-c="${f.c}" aria-label="Flagge"><img src="${f.src}" alt=""${f.flip?' style="transform:scaleX(-1)"':f.hue?` style="filter:hue-rotate(${f.hue}deg)"`:""}></button>`).join("")}</div>`}
+  else if(m==="loc") h=`<div class="maphead">${small}<h2>Wo liegt ${n}?</h2></div><div class="mapslot"></div>`;
+  else if(m==="mark") h=`<h2>Welches Land ist markiert?</h2><div class="mapslot"></div>${txt(shuffle([code,...near(code)]),"name")}`;
+  else if(m==="mtype") h=`<h2>Wie heißt das markierte Land?</h2><div class="mapslot"></div>${typebox("Land eintippen")}`;
   else h=`<h2>Wie heißt die Hauptstadt zu dieser Flagge?</h2>${big}${typebox("Hauptstadt eintippen")}`;
   q.innerHTML=kick+h+fb;
-  if(TYPEMODES.includes(m)) setTimeout(()=>{const t=$("ti");t&&t.focus()},50);
+  if(m!=="two")delete q.dataset.c2;
+  if(m==="two")layParts(code,G.c2);
+  if(m==="hole"){G.hole=pick(KR.keys[code]);setHole(0)}
+  if(MAPMODES.includes(m)){
+    // erst einhängen, dann auf die Region schwenken: die Kreisgröße hängt von der Breite auf dem Bildschirm ab
+    const v=mapView();q.querySelector(".mapslot").replaceWith(v.el);v.show(C[code].region);
+    if(m==="loc"){v.el.classList.add("tap");$("fb").innerHTML=`<span>Tippe das Land auf der Karte an. Kleine Länder haben einen Kreis, mit + kommst du näher heran.</span>`}
+    else{v.mark(code,"hi");v.point(code)}
+  }
+  if(TYPEMODES.includes(m)&&!(m==="mtype"&&matchMedia("(pointer:coarse)").matches)) setTimeout(()=>{const t=$("ti");t&&t.focus()},50);
+}
+// Zwei in Teilen: alle Teile im gleichen Maßstab, nach Größe sortiert in einer Reihe (höchstens etwa drei Reihen)
+function layParts(a,b){
+  const st=$("q").querySelector(".stage.parts"),W=Math.min(st.clientWidth-32,460)||300;
+  const ps=shuffle([...KR.parts[a],...KR.parts[b]]).sort((x,y)=>y.w*y.h-x.w*x.h),sum=ps.reduce((t,p)=>t+p.w,0),k=Math.min(W*.42,(3*W-16*ps.length)/sum);
+  const img=p=>`<img class="part" alt="" src="${p.src}" style="width:${Math.max(8,p.w*k).toFixed(1)}px">`;
+  st.innerHTML=ps.map(p=>p.n?`<span class="pn">${img(p)}<b>×${p.n}</b></span>`:img(p)).join("");
+}
+// Schlüsselloch: Kreis um einen Punkt mit mindestens zwei Farben; Stufe 3 = ganze Flagge
+function setHole(l){
+  const h=$("q").querySelector(".keyhole");if(!h)return;const [x,y]=G.hole,r=[11,18,28][l];G.holeL=l;
+  const img=h.querySelector("img"),ring=h.querySelector(".ring");
+  if(l>=3){img.style.clipPath="none";ring.hidden=true;return}
+  img.style.clipPath=`circle(${r}% at ${x*100}% ${y*100}%)`;
+  const d=r*Math.hypot(4,3)/Math.SQRT2/2; // Kreisradius in % bezieht sich auf die Diagonale / √2, Ring in % der Breite
+  Object.assign(ring.style,{width:d+"%",left:(x*100-d/2)+"%",top:(y*100-d*2/3)+"%"});
 }
 function answer(ok,code,picked){
   if(G.locked)return;
   if(G.race){G.times.push([code,performance.now()-G.qStart,ok]);if(!ok)G.penalty+=PENALTY}
-  G.locked=true;
+  G.locked=true;if(addQ())G.goal=true;
   const typed=TYPEMODES.includes(G.mode), gain=record(G.kind,code,ok,typed&&!G.hint), s=stars(G.kind,code);
   const fb=$("fb");
   let xp=0;
@@ -291,31 +476,44 @@ function answer(ok,code,picked){
     xp=(typed?20:10)+(BOTHMODES.includes(G.mode)?5:0);if(G.hint)xp=Math.ceil(xp/2);
     xp+=Math.min(10,2*(G.streak-1));
     if(gain>0){xp+=20;G.newStars++;if(s===3){xp+=50;G.mastered++}}
-    G.xp+=xp;if(addXp(xp))G.goal=true;
+    G.xp+=xp;addXp(xp);
   }else{G.streak=0;G.missed.push(G.list[G.i])}
   play(!ok?"bad":gain>0?"star":"ok");
   hud();
-  document.querySelectorAll(".opt").forEach(b=>{b.disabled=true;if(b.dataset.c===code)b.classList.add("ok");else if(b.dataset.c===picked)b.classList.add("bad")});
+  document.querySelectorAll(".opt").forEach(b=>{b.disabled=true;b.classList.remove("sel");if(b.dataset.c===code||G.mode==="two"&&b.dataset.c===G.c2)b.classList.add("ok");else if(b.dataset.c===picked||G.mode==="two"&&(G.picks||[]).includes(b.dataset.c))b.classList.add("bad")});
+  if(G.mode==="hole"){setHole(3);const hb=$("holeBtn");if(hb)hb.hidden=true}
+  if(G.mode==="two")$("q").querySelector(".stage.parts").innerHTML=`<div class="pair"><img class="flag" src="${flag(code)}" alt="${C[code].name}"><img class="flag" src="${flag(G.c2)}" alt="${C[G.c2].name}"></div>`;
   const ti=$("ti");if(ti)ti.disabled=true;
+  if(G.kind==="m"&&MAP_VIEW){MAP_VIEW.clear();MAP_VIEW.el.classList.remove("tap");MAP_VIEW.mark(code,"ok");if(picked&&picked!==code)MAP_VIEW.mark(picked,"bad");MAP_VIEW.point(code)}
   const stk=G.streak>=3?` · ${G.streak} in Folge`:"";
   fb.className="fb "+(ok?"ok":"bad");
-  const x=C[code], want=G.kind==="c"?x.cap:x.name, note=G.kind==="c"&&CAP_NOTE[code];
+  const x=C[code], want=G.kind==="c"?x.cap:G.mode==="two"?`${x.name} und ${C[G.c2].name}`:x.name, note=G.kind==="c"&&CAP_NOTE[code];
   if(G.race){ // im Rennen sofort weiter, bei Fehlern kurz die Lösung zeigen
     fb.innerHTML=`<b>${ok?"Richtig!":"Das war "+want}</b>${ok?"":`<span>+5 Sekunden</span>`}`;
     if(!ok)$("q").classList.add("shake");
     G.timer=setTimeout(()=>{$("q").classList.remove("shake");G.i++;next()},ok?250:1200);
     return;
   }
-  fb.innerHTML=`<b>${ok?"Richtig! +"+xp+" XP":"Das war "+want}</b><span>${x.name} · ${x.cap} · ${x.region}${ok?stk:""}</span><span class="stars${gain>0?" up":""}" aria-label="${s} von 3 Sternen">${starStr(s)}</span>${note?`<span class="note">${note}</span>`:""}`;
+  const fk=G.mode==="fake"&&!ok&&picked?G.fakes[+picked.slice(4)]:null;
+  const tapped=fk?`<b>Die war verändert</b><span>${fk.why} Die echte Flagge von ${x.name} ist grün markiert.</span>`:G.mode==="loc"&&picked&&!ok?`<b>Das war ${C[picked]?C[picked].name:"ein anderes Land"}</b><span>${x.name} ist grün markiert.</span>`:"";
+  fb.innerHTML=tapped?`${tapped}<span class="stars" aria-label="${s} von 3 Sternen">${starStr(s)}</span>`:`<b>${ok?"Richtig!":"Das war "+want}</b><span>${x.name} · ${x.cap} · ${x.region}${ok?stk:""}</span><span class="stars${gain>0?" up":""}" aria-label="${s} von 3 Sternen">${starStr(s)}</span>${note?`<span class="note">${note}</span>`:""}`;
   if(!ok) $("q").classList.add("shake");
   const last=G.i+1>=G.list.length;
   const row=document.createElement("div");row.className="row";
-  row.innerHTML=`<button class="btn" id="nx">${last?"Ergebnis":"Weiter"}</button>`;
+  row.innerHTML=`<button class="btn primary" id="nx">${last?"Ergebnis":"Weiter"}</button>`;
   $("q").appendChild(row);$("nx").focus();
   $("nx").onclick=()=>{$("q").classList.remove("shake");G.i++;next()};
 }
 $("q").addEventListener("click",e=>{
-  const b=e.target.closest(".opt");if(b&&!G.locked){const code=G.list[G.i].c;answer(b.dataset.c===code,code,b.dataset.c);return}
+  const b=e.target.closest(".opt");
+  if(b&&!G.locked&&G.mode==="two"){ // zwei Länder antippen; ein Tipp auf ein gewähltes nimmt es zurück
+    const code=G.list[G.i].c;G.picks=G.picks||[];const i=G.picks.indexOf(b.dataset.c);
+    if(i>=0){G.picks.splice(i,1);b.classList.remove("sel");return}
+    G.picks.push(b.dataset.c);b.classList.add("sel");play("tap");
+    if(G.picks.length===2){const ok=G.picks.includes(code)&&G.picks.includes(G.c2);G.picks=G.picks.filter(c=>c!==code&&c!==G.c2);answer(ok,code,null)}
+    return}
+  if(b&&!G.locked){const code=G.list[G.i].c;answer(b.dataset.c===code,code,b.dataset.c);return}
+  if(e.target.id==="holeBtn"&&!G.locked){G.hint++;setHole(Math.min(2,G.holeL+1));if(G.holeL>=2){e.target.disabled=true;e.target.textContent="Größer geht nicht"}return}
   if(e.target.id==="skip"&&!G.locked){answer(false,G.list[G.i].c,null);return}
   if(e.target.id==="hintBtn"&&!G.locked){const code=G.list[G.i].c;G.hint++;const n=G.kind==="c"?C[code].cap:C[code].name;
     $("fb").className="fb";$("fb").innerHTML=`<b>${n.slice(0,G.hint)}${"·".repeat(Math.max(0,n.length-G.hint))}</b><span>${n.length} Buchstaben · ${C[code].region}</span>`;}
@@ -324,12 +522,12 @@ $("q").addEventListener("submit",e=>{e.preventDefault();if(G.locked)return;const
 $("quit").onclick=()=>{clearTimeout(G&&G.timer);clearInterval(G&&G.clock);G=null;goHome()};
 function raceResult(){
   const total=raceMs(),old=(P.best||{})[G.key],rec=!old||total<old;
-  if(rec){P.best=P.best||{};P.best[G.key]=Math.round(total);saveProfile();G.xp+=30;if(addXp(30))G.goal=true}
+  if(rec){P.best=P.best||{};P.best[G.key]=Math.round(total);saveProfile();G.xp+=30;addXp(30)}
   const by=[...G.times].sort((a,b)=>a[1]-b[1]),lbl=c=>G.kind==="c"?C[c].cap:C[c].name;
   const cmp=!old?"Erste Bestzeit für diese Strecke":rec?`Neue Bestzeit, ${secs(old-total)} schneller als dein Rekord`:`${secs(total-old)} langsamer als deine Bestzeit (${fmt(old)})`;
   return `<div class="label">Zeitrennen</div><div class="score">${fmt(total)}</div>
   <p class="sub">${G.right} von ${G.list.length} richtig${G.penalty?` · ${G.penalty/1000} s Strafzeit`:""} · Schnitt ${secs(total/G.list.length)} pro Frage</p>
-  <div class="${rec?"levelup":"gain"}">${cmp}${rec?" · +30 XP":""}</div>
+  <div class="${rec?"levelup":"gain"}">${cmp}</div>
   <div class="times"><div><small>Schnellste Antwort</small><b>${secs(by[0][1])}</b><span>${lbl(by[0][0])}</span></div><div><small>Langsamste Antwort</small><b>${secs(by[by.length-1][1])}</b><span>${lbl(by[by.length-1][0])}</span></div></div>`;
 }
 function finish(){
@@ -338,26 +536,24 @@ function finish(){
   const race=G.race?raceResult():"";
   const n=G.list.length,p=Math.round(100*G.right/n);
   const msg=p===100?"Perfekt, kein einziger Fehler.":p>=80?"Stark!":p>=50?"Gut gemacht, da geht noch mehr.":"Weiter üben, es lohnt sich.";
-  if(p===100&&n>=10){G.xp+=30;if(addXp(30))G.goal=true}
-  const st=newStamps();st.forEach(()=>{G.xp+=STAMP_XP;if(addXp(STAMP_XP))G.goal=true});
-  const L=levelOf(P.xp),a=xpFor(L),b=xpFor(L+1);
-  play(L>G.level||G.goal?"big":"end");if(st.length)play("stamp",L>G.level||G.goal?2200:1100);
-  const extra=[G.newStars?`${G.newStars} neue${G.newStars===1?"r":""} Stern${G.newStars===1?"":"e"}`:"",G.mastered?`${G.mastered} gemeistert`:"",p===100&&n>=10?"Bonus für die perfekte Runde":""].filter(Boolean).join(" · ");
+  if(p===100&&n>=10){G.xp+=30;addXp(30)}
+  const st=newStamps();st.forEach(()=>{G.xp+=STAMP_XP;addXp(STAMP_XP)});
+  play(G.goal?"big":"end");if(st.length)play("stamp",G.goal?2200:1100);
+  const extra=[G.newStars?`${G.newStars} neue${G.newStars===1?"r":""} Stern${G.newStars===1?"":"e"}`:"",G.mastered?`${G.mastered} gemeistert`:"",p===100&&n>=10?"Perfekte Runde":""].filter(Boolean).join(" · ");
   const seen=new Set(),miss=G.missed.filter(it=>{const k=it.c+kindOf(it.m);if(seen.has(k))return false;seen.add(k);return true});
-  $("result").innerHTML=`${race||`<div class="label">Ergebnis</div><div class="score">${G.right} / ${n}</div><p class="sub">${msg} Beste Serie: ${G.best}.</p>`}
-  <div class="gain"><b>+${G.xp} XP</b>${extra?`<span>${extra}</span>`:""}</div>
-  ${L>G.level?`<div class="levelup">Level ${L} erreicht: ${titleOf(L)}</div>`:""}
-  ${st.map(([r,k])=>`<div class="levelup stamp-new">Neuer Stempel im Reisepass: ${r} · ${KIND[k]} · +${STAMP_XP} XP</div>`).join("")}
+  $("result").innerHTML=`<div class="sndrow"><span></span><span class="topr">${themeBtn()}${sndBtn()}</span></div>${race||`<div class="label">Ergebnis</div><div class="score">${G.right} / ${n}</div><p class="sub">${msg} Beste Serie: ${G.best}.</p>`}
+  ${extra?`<div class="gain"><span>${extra}</span></div>`:""}
+  ${st.map(([r,k])=>`<div class="levelup stamp-new">Neues Visum im Reisepass: ${r} · ${KIND[k]}</div>`).join("")}
   ${G.goal?`<div class="levelup">Tagesziel geschafft · ${streakNow()} ${streakNow()===1?"Tag":"Tage"} Serie</div>`:""}
-  <div class="mastery"><div class="label">Level ${L} · ${P.xp-a} / ${b-a} XP</div><div class="bar xp"><div style="width:${100*(P.xp-a)/(b-a)}%"></div></div>
-  <div class="label">Tagesziel · ${dayXp()} / ${P.goal} XP</div><div class="bar"><div style="width:${Math.min(100,100*dayXp()/P.goal)}%"></div></div></div>
+  <div class="mastery">  <div class="label">Tagesziel · ${Math.min(dayQ(),P.goalQ)} / ${P.goalQ} Fragen</div><div class="bar"><div style="width:${Math.min(100,100*dayQ()/P.goalQ)}%"></div></div></div>
   ${miss.length?`<div class="label">Das war noch schwer</div><div class="missed">${miss.map(({c,m})=>`<figure><img src="${flag(c)}" alt=""><figcaption>${C[c].name}${kindOf(m)==="c"?`<small>${C[c].cap}</small>`:""}</figcaption></figure>`).join("")}</div>`:""}
-  <div class="row">${miss.length?`<button class="btn" id="again">Fehler nochmal üben</button>`:""}<button class="btn ${miss.length?"ghost":""}" id="new">${G.next}</button></div>
+  <div class="row">${miss.length?`<button class="btn primary" id="again">Fehler nochmal üben</button>`:""}<button class="btn ${miss.length?"ghost":"primary"}" id="new">${G.next}</button></div>
   <button class="btn ghost" id="homeBtn">Zur Startseite</button>`;
   const g=G;
   if($("again"))$("again").onclick=()=>begin({items:shuffle(miss),restart:g.restart,next:g.next});
   $("new").onclick=()=>g.restart();
   $("homeBtn").onclick=()=>goHome();
+  renderSound();renderTheme();
 }
 
 // Reisepass: alle Länder nach Region mit Sternen, Stempel pro Region und Karte, Bestzeiten
@@ -366,30 +562,45 @@ const stampDone=(r,k)=>REGIONS[r].split(" ").every(c=>known(k,c));
 // Stempel gibt es, sobald alle Karten einer Region gekonnt sind (2 Sterne); vergeben wird einmal, am Ende einer Runde
 function newStamps(){
   P.stamps=P.stamps||{};const out=[];
-  for(const r of Object.keys(REGIONS))for(const k of ["f","c"])
+  for(const r of Object.keys(REGIONS))for(const k of KINDS)
     if(!P.stamps[r+"|"+k]&&stampDone(r,k)){P.stamps[r+"|"+k]=today();out.push([r,k])}
   if(out.length)saveProfile();
   return out;
 }
-let passKind="f";
+let passKind="f",passRegion=null;
+const dayStr=d=>{const x=new Date(d*864e5);return [x.getUTCDate(),x.getUTCMonth()+1,x.getUTCFullYear()].map((v,i)=>i<2?String(v).padStart(2,"0"):v).join(".")};
+// Reisepass: Umschlag, Visa-Seite mit den Regionsstempeln und darunter pro Region ein Sammelalbum (Sticker ab einem Stern)
 function renderPass(){
-  const tot=k=>ALL.reduce((a,c)=>a+stars(k,c),0), stamps=P.stamps||{};
+  const tot=k=>ALL.reduce((a,c)=>a+stars(k,c),0), stamps=P.stamps||{}, got=ALL.filter(c=>KINDS.some(k=>stars(k,c))).length;
   const best=Object.entries(P.best||{}).sort((a,b)=>a[0]<b[0]?-1:1);
-  $("pass").innerHTML=`<h2 class="hero">Reisepass</h2>
-  <div class="passsum"><div><b>★ ${tot("f")}</b><small>von ${3*ALL.length} Flaggen-Sternen</small></div><div><b>★ ${tot("c")}</b><small>von ${3*ALL.length} Hauptstadt-Sternen</small></div><div><b>${Object.keys(stamps).length}</b><small>von ${2*Object.keys(REGIONS).length} Stempeln</small></div></div>
-  <div class="label">Stempel</div>
-  <div class="stamps">${Object.keys(REGIONS).map(r=>["f","c"].map(k=>{const on=stamps[r+"|"+k];
-    return `<div class="stamp${on?" on":""} ${k}" data-stamp="${r}|${k}" aria-label="${r}, ${KIND[k]}${on?", erreicht":", noch offen"}"><b>${r}</b><small>${KIND[k]}</small></div>`}).join("")).join("")}</div>
-  <p class="muted race">Einen Stempel gibt es, wenn alle Flaggen oder alle Hauptstädte einer Region zwei Sterne haben. Er bringt ${STAMP_XP} XP.</p>
-  <div class="seg" id="passKinds">${["f","c"].map(k=>`<button data-k="${k}" aria-pressed="${passKind===k}">${KIND[k]}</button>`).join("")}</div>
-  ${Object.keys(REGIONS).map(r=>{const list=REGIONS[r].split(" ").sort((a,b)=>C[a].name.localeCompare(C[b].name,"de"));
-    const got=list.reduce((a,c)=>a+stars(passKind,c),0);
-    return `<div class="label">${r} · ★ ${got} von ${3*list.length}</div><div class="tiles">${list.map(c=>{const n=stars(passKind,c);
-      return `<div class="tile${n?"":" grey"}" data-c="${c}"><img src="${flag(c)}" alt=""><b>${C[c].name}</b>${passKind==="c"?`<span>${n?C[c].cap:"?"}</span>`:""}<i aria-label="${n} von 3 Sternen">${starStr(n)}</i></div>`}).join("")}</div>`}).join("")}
+  const first=P.since||Math.min(...[...Object.values(M.f),...Object.values(M.c),...Object.values(M.m)].map(x=>x.d1).filter(d=>d>0));
+  const regs=ORDER.filter(r=>REGIONS[r]);
+  if(!passRegion)passRegion=regs.find(r=>REGIONS[r].split(" ").some(c=>stars(passKind,c)<2))||regs[0];
+  const list=REGIONS[passRegion].split(" ").sort((a,b)=>C[a].name.localeCompare(C[b].name,"de"));
+  const have=list.filter(c=>stars(passKind,c)>0).length;
+  const tilt=[-3,2,0,-2,3,-1,2,-3,1,-2,2,0,1];
+  $("pass").innerHTML=`<div class="sndrow"><span class="label">Reisepass</span><span class="topr">${themeBtn()}${sndBtn()}</span></div><div class="passcol"><div class="cover">
+    <svg class="globe" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26M4.5 8h21M4.5 22h21"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg>
+    <div><small>Reisepass · Orbista</small><h2>${got} ${got===1?"Land":"Länder"} besucht</h2><span>${isFinite(first)?`unterwegs seit ${dayStr(first)}`:"bereit zur Abreise"}</span>
+    <span class="covermini">★ ${tot("f")} Flaggen · ★ ${tot("c")} Hauptstädte · ★ ${tot("m")} Landkarte</span></div>
+    <div class="coverstats"><div><b>★ ${tot("f")}</b><small>Flaggen-Sterne</small></div><div><b>★ ${tot("c")}</b><small>Hauptstadt-Sterne</small></div><div><b>★ ${tot("m")}</b><small>Landkarten-Sterne</small></div><div><b>${Object.keys(stamps).length} / ${KINDS.length*regs.length}</b><small>Visa</small></div></div></div>
+  <div class="visa"><div class="visahead"><h3>Visa</h3><small>${Object.keys(stamps).length} von ${KINDS.length*regs.length}</small></div>
+  <div class="stamps">${regs.map(r=>KINDS.map(k=>{const on=stamps[r+"|"+k];
+    return `<div class="stamp${on?" on":""} ${k}" data-stamp="${r}|${k}" aria-label="${r}, ${KIND[k]}${on?", erreicht":", noch offen"}"><small>${KIND[k]}</small><b>${r}</b>${on?`<i>${dayStr(on)}</i>`:""}</div>`}).join("")).join("")}</div>
+  <p class="muted race">Ein Visum gibt es, wenn alle Flaggen, alle Hauptstädte oder alle Länder auf der Landkarte einer Region zwei Sterne haben. Das erste Visum schaltet das Zeitrennen frei.</p></div></div>
+  <div class="passcol"><div class="label">Sammelalbum</div>
+  <div class="albumbar"><div class="seg three" id="passKinds">${KINDS.map(k=>`<button data-k="${k}" aria-pressed="${passKind===k}">${KIND[k]}</button>`).join("")}</div>
+  <div class="chips" id="passRegions">${regs.map(r=>`<button class="chip" data-r="${r}" aria-pressed="${r===passRegion}">${r}</button>`).join("")}</div></div>
+  <div class="albumhead"><div><h3>${passRegion}</h3><span class="muted">${have} von ${list.length} eingeklebt</span></div><b>${Math.round(100*have/list.length)} %</b></div>
+  <div class="album">${list.map((c,i)=>{const n=stars(passKind,c);
+    return n?`<div class="slot" data-c="${c}"><div class="sticker" style="--tilt:${tilt[i%tilt.length]}deg"><img src="${flag(c)}" alt=""></div><b>${C[c].name}</b>${passKind==="c"?`<span>${C[c].cap}</span>`:""}<i aria-label="${n} von 3 Sternen">${starStr(n)}</i></div>`
+      :`<div class="slot empty" data-c="${c}"><div class="hole">${i+1}</div><b>${C[c].name}</b><span>${passKind==="c"?"Hauptstadt ?":"noch frei"}</span></div>`}).join("")}</div>
   <div class="label">Bestzeiten im Zeitrennen</div>
-  ${best.length?`<div class="besttimes">${best.map(([key,ms])=>{const [m,r,l]=key.split("|");return `<div><span>${MODE_NAME[m]||m} · ${regionName(r)} · ${+l?l+" Fragen":"alle"}</span><b>${fmt(ms)}</b></div>`}).join("")}</div>`:`<p class="muted race">Noch keine Bestzeiten. Das Zeitrennen gibt es ab Level ${RACE_LEVEL}.</p>`}`;
+  ${best.length?`<div class="besttimes">${best.map(([key,ms])=>{const [m,r,l]=key.split("|");return `<div><span>${MODE_NAME[m]||m} · ${regionName(r)} · ${+l?l+" Fragen":"alle"}</span><b>${fmt(ms)}</b></div>`}).join("")}</div>`:`<p class="muted race">Noch keine Bestzeiten. Das Zeitrennen gibt es ab dem ersten Visum.</p>`}</div>`;
+  renderSound();renderTheme();
 }
-$("pass").onclick=e=>{const k=e.target.closest("[data-k]");if(k){passKind=k.dataset.k;renderPass()}};
+$("pass").onclick=e=>{const k=e.target.closest("[data-k]"),r=e.target.closest("[data-r]");
+  if(k){passKind=k.dataset.k;renderPass()}else if(r){passRegion=r.dataset.r;renderPass()}};
 
-if(P.topic)goHome();else openWelcome();
+renderSound();renderTheme();if(P.topic)goHome();else openWelcome();
 })();

@@ -4,18 +4,16 @@
   --accent:#1f5673; --accent-ink:#ffffff; --gold:#b5701c; --track:#e6ddcb; --sel:#e8dfcc;
   --ok:#2f7a4f; --ok-bg:#e1eedf; --bad:#b03a2e; --bad-bg:#f6e1dc; --contour:#d9cfbc;
   --shadow:0 1px 0 var(--line),0 6px 18px rgba(29,43,58,.10);
-  --logo-filter:none; --f-display:"Young Serif",Georgia,serif; --f-body:"IBM Plex Sans",system-ui,sans-serif;
+  --pass:#1c3a4f; --pass-ink:#f3e6c8; --pass-spine:#142b3b; --pass-gold:#d9a85b; --guilloche:rgba(31,86,115,.05);
+  --sea:#d3e2e6; --sea-line:#b9cfd6; --grid:#c3d4da; --land:#efe5cf; --land-off:#e2dccf; --border:#8a7556;
+  --logo-filter:none; --cta:#e58a33; --cta-ink:#1d2b3a; color-scheme:light; --f-display:"Young Serif",Georgia,serif; --f-body:"IBM Plex Sans",system-ui,sans-serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#111a24; --card:#18232f; --ink:#ede6d6; --muted:#a2a9b0; --line:#2c3a48; --line2:#3b4b5b;
-  --accent:#7fb7d6; --accent-ink:#0e1a24; --gold:#e0a458; --track:#2c3a48; --sel:#22303e;
-  --ok:#7cc79a; --ok-bg:#183326; --bad:#f08a7e; --bad-bg:#3a1f1c; --contour:#1f2b37;
-  --shadow:0 1px 0 rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.3); --logo-filter:brightness(0) invert(1); color-scheme:dark}}
+/* Standard ist dunkel (unabhängig vom System, gesetzt per data-theme in body.html); Hell über den Umschalter (data-theme, gemerkt in orbista.theme) */
 :root[data-theme="dark"]{
   --bg:#111a24; --card:#18232f; --ink:#ede6d6; --muted:#a2a9b0; --line:#2c3a48; --line2:#3b4b5b;
   --accent:#7fb7d6; --accent-ink:#0e1a24; --gold:#e0a458; --track:#2c3a48; --sel:#22303e;
   --ok:#7cc79a; --ok-bg:#183326; --bad:#f08a7e; --bad-bg:#3a1f1c; --contour:#1f2b37;
-  --shadow:0 1px 0 rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.3); --logo-filter:brightness(0) invert(1); color-scheme:dark}
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.3); --pass:#1f4560; --pass-ink:#f3e6c8; --pass-spine:#16344a; --pass-gold:#e0b46a; --guilloche:rgba(127,183,214,.05); --sea:#15283a; --sea-line:#1f364a; --grid:#1c3245; --land:#2b3746; --land-off:#212b36; --border:#71808f; --logo-filter:brightness(0) invert(1); --cta:#e89a4c; --cta-ink:#111a24; color-scheme:dark}
 *{box-sizing:border-box}
 html{color-scheme:light}
 img{max-width:100%}
@@ -43,10 +41,29 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .globe .dot{fill:var(--gold);stroke:none}
 .globe.big{width:56px;height:56px;stroke-width:1.2;margin-top:20px}
 .topr{display:flex;align-items:center;gap:4px}
-.pill{font-size:.8rem;font-weight:600;border:1px solid var(--ink);border-radius:999px;padding:5px 12px;white-space:nowrap}
 
-/* Heute: Tagesziel, Serie, Level und der Hauptknopf */
+/* Heute: Tagesziel, Serie und der Hauptknopf */
 .todayrow{display:flex;align-items:center;gap:16px}
+/* Deine Welt: Punktkarte im Stil des Reisepass-Umschlags */
+.world{background:var(--pass);color:var(--pass-ink);border-radius:10px;padding:16px 14px 14px;display:flex;flex-direction:column;gap:12px;box-shadow:4px 4px 0 var(--ink)}
+.worldhead{display:flex;justify-content:space-between;align-items:baseline}
+.worldhead h2{font-size:1.35rem;font-weight:400}
+.worldhead b{font-family:var(--f-display);font-weight:400;font-size:1.35rem;color:var(--pass-gold)}
+.dots{width:100%;height:auto;display:block}
+.dots circle{fill:var(--pass-ink);opacity:.2}
+.dots .s1{opacity:.55}
+.dots .s2{fill:var(--pass-gold);opacity:1}
+.dots .p1{fill:var(--pass-gold);opacity:.5}
+.dots .p2{fill:var(--pass-gold);opacity:.78}
+.dots .n{transform-box:fill-box;transform-origin:center;animation:dotpop 1.2s ease-out 2}
+@keyframes dotpop{0%{transform:scale(1)}40%{transform:scale(1.22)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.dots .n{animation:none}}
+.worldkey{display:flex;gap:14px;flex-wrap:wrap;font-size:.75rem;opacity:.85}
+.worldkey span{display:flex;align-items:center;gap:6px}
+.worldkey i{width:8px;height:8px;border-radius:50%;background:var(--pass-ink)}
+.worldkey .k0{opacity:.3}.worldkey .k1{opacity:.55}.worldkey .k2{background:var(--pass-gold)}.worldkey .kp{background:var(--pass-gold);opacity:.6}
+.worldnew{margin:0;font-size:.85rem;opacity:.9}
+.worldnew b{font-weight:600;color:var(--pass-gold)}
 .goal{border:0;background:transparent;padding:0;position:relative;width:68px;height:68px;flex:none}
 .goal svg{width:68px;height:68px;transform:rotate(-90deg)}
 .goal .ring0{fill:none;stroke:var(--track);stroke-width:6}
@@ -58,6 +75,9 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .streak b{font-family:var(--f-body);font-size:inherit;color:var(--ink);font-weight:600}
 .btn{border:2px solid var(--ink);border-radius:10px;background:var(--card);color:var(--ink);font-family:var(--f-display);font-size:1.25rem;padding:14px 20px;min-height:58px;text-align:center;box-shadow:4px 4px 0 var(--ink);transition:transform .08s,box-shadow .08s}
 .btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+/* wichtige Knöpfe (Weiterreisen, Los, Weiter, OK) in Orange, weiter als Druckstempel */
+.btn.primary{background:var(--cta);color:var(--cta-ink)}
+.btn.primary small,.btn.go.primary small{color:var(--cta-ink);opacity:.8}
 .btn.ghost{border-color:var(--line2);box-shadow:none}
 .btn.ghost:active{transform:none}
 .btn.go{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;min-height:66px}
@@ -85,7 +105,7 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .regions .line .row1 span{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .meter{height:4px;border-radius:2px;background:var(--track);overflow:hidden}
 .meter>i{display:block;height:100%;background:var(--gold)}
-.tri{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tri{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .tri button{background:var(--card);border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink);border-radius:10px;padding:14px 4px;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:88px;font-weight:600;font-size:.95rem}
 .tri svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .tri button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
@@ -96,7 +116,14 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:2px solid var(--ink);border-radius:10px;overflow:hidden}
 .seg button{border:0;background:transparent;padding:12px;min-height:46px;font-weight:600}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.seg.three button{padding-inline:4px}
 .back{display:flex;align-items:center;gap:4px;margin-left:-10px}
+.back .themebtn{margin-left:auto}
+.back .sndbtn{margin-right:-10px}
+.hud .themebtn{margin:0 -12px 0 -8px}
+.hud .sndbtn{margin:0 -10px 0 0}
+.sndrow{display:flex;align-items:center;justify-content:space-between;margin:-8px -10px -10px 0}
 .iconbtn{border:0;background:transparent;width:44px;height:44px;display:flex;align-items:center;justify-content:center;padding:0;flex:none}
 .iconbtn svg{width:22px;height:22px;fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .topicline{font-size:.85rem;margin:0}
@@ -116,7 +143,6 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .hud{display:flex;align-items:center;gap:12px;margin-left:-10px}
 .bar{height:6px;border-radius:3px;background:var(--track);overflow:hidden}
 .bar>div{height:100%;background:var(--accent);width:0;transition:width .3s}
-.bar.xp>div{background:var(--gold)}
 .hud .bar{flex:1}
 .hud .stat{font-variant-numeric:tabular-nums;font-weight:600;font-size:.9rem;white-space:nowrap}
 .q{display:flex;flex-direction:column;align-items:stretch;gap:18px}
@@ -135,18 +161,58 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 .opt.bad{border-color:var(--bad);background:var(--bad-bg);box-shadow:3px 3px 0 var(--bad)}
 .opt[disabled]{cursor:default}
 .opt[disabled]:not(.ok):not(.bad){box-shadow:none;border-color:var(--line2)}
+/* Kreative Spielarten: Farbkreis, Zwei in Teilen, Schlüsselloch (Echt oder falsch nutzt die Flaggen-Auswahl) */
+.pie{width:min(240px,80%);height:auto;display:block}
+.pie path,.pie circle{stroke:var(--card);stroke-width:2;stroke-linejoin:round}
+.stage.parts{flex-wrap:wrap;align-items:center;align-content:center;gap:14px 16px;background:var(--sea);min-height:180px}
+.part{display:block;flex:none;height:auto;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.35))}
+.pn{display:flex;align-items:center;gap:6px}
+.pn b{font-family:var(--f-display);font-weight:400;font-size:1.1rem}
+.pair{display:flex;gap:12px;width:100%;justify-content:center;align-items:center}
+.pair .flag{width:48%}
+.opts.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.opt.sel{border-color:var(--gold);box-shadow:3px 3px 0 var(--gold);background:var(--sel)}
+.q .hint{margin:-8px 0 0;color:var(--muted);font-size:.95rem}
+.keyhole{position:relative;width:100%;max-width:300px;outline:1.5px dashed var(--line2);outline-offset:-1px}
+.keyhole .flag{max-width:none;box-shadow:none;background:transparent;transition:clip-path .45s ease}
+.keyhole .ring{position:absolute;aspect-ratio:1;border:2px dashed var(--muted);border-radius:50%;pointer-events:none;transition:all .45s ease}
+@media (prefers-reduced-motion:reduce){.keyhole .flag,.keyhole .ring{transition:none}}
 .typebox{display:flex;gap:10px;width:100%}
 .typebox input{flex:1;min-width:0;font:inherit;font-size:1.2rem;padding:14px;border-radius:10px;border:2px solid var(--ink);background:var(--card);color:var(--ink)}
 .typebox .btn{padding-inline:20px}
 .row{display:flex;gap:10px;flex-wrap:wrap;width:100%}
 .row .btn{flex:1}
+/* Landkarte: Meer, Länder als Papier mit Tintengrenzen; antippbar (loc), markiert ocker, richtig grün, falsch rot */
+.maphead{display:flex;align-items:center;gap:14px}
+.maphead .flag.small{width:64px;flex:none}
+.mapbox{position:relative;background:var(--sea);border:1px solid var(--line);border-radius:6px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.mapbox svg{display:block;width:100%;height:auto;max-height:58vh}
+.mapbox .bg{fill:var(--land-off);stroke:var(--border);stroke-width:.5;stroke-opacity:.6}
+.mapbox .c{fill:var(--land);stroke:var(--border);stroke-width:.8;stroke-linejoin:round}
+/* Stil „Druckatlas“ (Mark, 2026-10-25): Gradnetz, Wasserlinien an allen Küsten, Inselstaaten mit dünnem Rand, damit Atolle sichtbar bleiben */
+.mapbox .grid{fill:none;stroke:var(--grid);stroke-width:.7}
+.mapbox .wl{fill:none;stroke:var(--sea-line);stroke-linejoin:round}
+.mapbox .wl1{stroke-width:5}.mapbox .wl2{stroke-width:11;opacity:.55}.mapbox .wl3{stroke-width:19;opacity:.28}
+.mapbox .c.isl{stroke-width:1.2}
+.mapbox .dot{fill:transparent;stroke:var(--border);stroke-width:1.3;stroke-dasharray:2 2}
+.mapbox.tap .c,.mapbox.tap .dot{cursor:pointer}
+@media (hover:hover){.mapbox.tap .c:hover{fill:var(--gold);fill-opacity:.35}}
+.mapbox .hi{fill:var(--gold);stroke:var(--ink);stroke-width:1.8;stroke-dasharray:none}
+.mapbox .ok{fill:var(--ok-bg);stroke:var(--ok);stroke-width:2.2;stroke-dasharray:none}
+.mapbox .bad{fill:var(--bad-bg);stroke:var(--bad);stroke-width:2.2;stroke-dasharray:none}
+.mapbox .arrow{pointer-events:none}
+.mapbox .arrow circle{fill:none;stroke:var(--ink);stroke-width:2}
+.mapbox .arrow path{fill:var(--ink);stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.mapbox .zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:8px}
+.mapbox .zoom button{width:40px;height:40px;border:2px solid var(--ink);border-radius:8px;background:var(--card);box-shadow:2px 2px 0 var(--ink);font-size:1.25rem;font-weight:600;line-height:1;padding:0}
+.mapbox .zoom button:active{transform:translate(2px,2px);box-shadow:none}
 .fb{min-height:3.2em;display:flex;flex-direction:column;gap:2px}
 .fb b{font-family:var(--f-display);font-weight:400;font-size:1.3rem}
 .fb.ok b{color:var(--ok)} .fb.bad b{color:var(--bad)}
 .fb span{color:var(--muted);font-size:.95rem}
 .fb .note{color:var(--ink);font-size:.9rem;margin-top:4px}
 .stars{color:var(--gold);letter-spacing:.1em}
-.fb .stars{font-size:1.15rem}
+.fb .stars{font-size:1.15rem;align-self:flex-start}
 .fb .stars.up{animation:pop .5s}
 @keyframes pop{50%{transform:scale(1.25)}}
 
@@ -171,27 +237,162 @@ svg path,svg circle,svg ellipse,svg rect{vector-effect:non-scaling-stroke}
 @media (prefers-reduced-motion:no-preference){.shake{animation:sh .3s}}
 @keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
-/* Reisepass */
-.passsum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.passsum>div{display:flex;flex-direction:column;gap:2px;min-width:0}
-.passsum b{font-family:var(--f-display);font-weight:400;font-size:1.3rem;color:var(--gold)}
-.passsum>div:last-child b{color:var(--accent)}
-.passsum small{color:var(--muted);font-size:.78rem}
-.stamps{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
-.stamp{aspect-ratio:1;border-radius:50%;border:1px dashed var(--line2);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted);padding:6px;min-width:0}
-.stamp b{font-family:var(--f-display);font-weight:400;font-size:.74rem;line-height:1.1}
-.stamp small{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em}
-.stamp.on{border:3px double var(--accent);color:var(--accent);transform:rotate(-8deg)}
-.stamp.on.c{border-color:var(--gold);color:var(--gold);transform:rotate(6deg)}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
-.tile{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;min-width:0}
-.tile img{width:100%;aspect-ratio:4/3;object-fit:cover;box-shadow:0 0 0 1px var(--line)}
-.tile b{font-size:.8rem;font-weight:500;line-height:1.15;overflow-wrap:anywhere;hyphens:auto}
-.tile span{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
-.tile i{font-style:normal;color:var(--gold);font-size:.8rem;letter-spacing:.05em}
-.tile.grey img{filter:grayscale(1);opacity:.35}
-.tile.grey b{color:var(--muted)}
+/* Reisepass: Umschlag, Visa-Seite, Sammelalbum */
+.cover{display:flex;gap:16px;align-items:center;background:var(--pass);color:var(--pass-ink);border-radius:6px 14px 14px 6px;padding:18px 18px 16px 22px;box-shadow:inset 6px 0 0 var(--pass-spine),4px 4px 0 var(--ink)}
+.cover .globe{width:58px;height:58px;stroke:var(--pass-gold);stroke-width:1.1}
+.cover .globe .dot{fill:var(--pass-gold)}
+.cover>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.cover small{font-size:.62rem;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:var(--pass-gold)}
+.cover h2{font-size:1.45rem;line-height:1.1}
+.cover span{font-size:.8rem;opacity:.8}
+.cover>.coverstats{display:none}
+.albumbar{display:flex;flex-direction:column;gap:12px}
+.visa{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:12px;
+  background-image:repeating-linear-gradient(135deg,transparent 0 9px,var(--guilloche) 9px 10px)}
+.visahead{display:flex;justify-content:space-between;align-items:baseline}
+.visahead h3{font-size:1.2rem}
+.visahead small{color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
+.passcol{display:flex;flex-direction:column;gap:18px;min-width:0}
+.stamps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stamp{aspect-ratio:1;border-radius:50%;border:1px dashed var(--line2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;color:var(--muted);padding:4px;min-width:0}
+.stamp b{font-family:var(--f-display);font-weight:400;font-size:.8rem;line-height:1.05}
+.stamp small{font-size:.55rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.stamp i{font-style:normal;font-size:.58rem;font-variant-numeric:tabular-nums}
+.stamp.on{border:3px double var(--accent);color:var(--accent);transform:rotate(-8deg);box-shadow:inset 0 0 0 4px var(--card),inset 0 0 0 5px var(--accent)}
+.stamp.on.c{border-color:var(--gold);color:var(--gold);transform:rotate(6deg);box-shadow:inset 0 0 0 4px var(--card),inset 0 0 0 5px var(--gold)}
+.stamp.on.m{border-color:var(--ok);color:var(--ok);transform:rotate(-3deg);box-shadow:inset 0 0 0 4px var(--card),inset 0 0 0 5px var(--ok)}
+.chip{flex:none;font-size:.85rem;font-weight:600;padding:8px 14px;min-height:40px;border-radius:999px;border:2px solid var(--line2);background:transparent}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.albumhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.albumhead>div{display:flex;flex-direction:column;gap:2px}
+.albumhead h3{font-size:1.6rem}
+.albumhead span{font-size:.85rem}
+.albumhead>b{font-family:var(--f-display);font-weight:400;font-size:1.6rem;color:var(--gold);font-variant-numeric:tabular-nums}
+.album{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px 12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 10px;box-shadow:inset 0 0 0 6px var(--card),inset 0 0 0 7px var(--track)}
+.slot{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;min-width:0}
+.slot b{font-size:.78rem;font-weight:600;line-height:1.15;overflow-wrap:anywhere;hyphens:auto}
+.slot span{font-size:.72rem;color:var(--muted);overflow-wrap:anywhere}
+.slot i{font-style:normal;color:var(--gold);font-size:.75rem;letter-spacing:.06em}
+.sticker{width:100%;box-sizing:border-box;padding:4px;background:#fff;border-radius:3px;box-shadow:0 1px 0 var(--line),0 4px 10px rgba(29,43,58,.16);transform:rotate(var(--tilt,0deg))}
+.sticker img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.hole{width:100%;aspect-ratio:4/3;box-sizing:border-box;border:1.5px dashed var(--line2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-size:1.1rem;color:var(--muted)}
+.slot.empty b{font-weight:500;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .besttimes{display:flex;flex-direction:column;gap:6px}
 .besttimes>div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:6px}
 .besttimes b{font-variant-numeric:tabular-nums;font-family:var(--f-display);font-weight:400}
+
+/* Breite Bildschirme (Desktop, iPad quer): Breite nutzen, zweispaltig, Knöpfe direkt unter dem Inhalt, Leiste als schwebende Pille */
+/* Handy: Karte flacher, Antworten zur Karte zweispaltig, Weiter-Knopf bleibt am unteren Rand sichtbar */
+@media (max-width:899px){
+  .mapbox svg{max-height:40vh}
+  .q:has(.mapbox) .opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .q:has(.mapbox) .opt{min-height:48px;padding:10px 14px;font-size:1rem}
+  .q>.row:last-child{position:sticky;bottom:0;z-index:2;padding-block:14px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(to bottom,transparent,var(--bg) 35%)}
+}
+@media (min-width:900px){
+  body{padding-inline:32px;padding-block:32px 0;background-size:100% 420px}
+  main{max-width:1040px}
+  .screen{padding-bottom:110px}
+  #game,#result{padding-bottom:40px}
+  .hero{font-size:2.5rem}
+  #begin,#setupGo{margin-top:8px}
+
+  .tabs{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);margin:0;display:flex;gap:4px;padding:5px;border:2px solid var(--ink);border-radius:999px;box-shadow:3px 3px 0 var(--ink);z-index:5}
+  .tabs button{flex-direction:row;gap:8px;min-height:44px;padding:8px 20px;border-radius:999px;font-size:.92rem}
+  .tabs svg{width:20px;height:20px}
+  .tabs button[aria-current="page"]{background:var(--sel)}
+
+  /* Erster Start: eine lesbare Spalte, Knopf direkt darunter */
+  #welcome{max-width:680px;width:100%;margin-inline:auto;padding-top:4vh}
+  #welcome .tri{grid-template-columns:repeat(4,minmax(0,1fr))}
+  #welcome .tri button{min-height:110px;font-size:1.05rem}
+  #welcome .tri svg{width:30px;height:30px}
+  #welcome #begin{align-self:flex-start;min-width:280px}
+
+  /* Startseite: oben Heute und Deine Welt gleich hoch nebeneinander, darunter Gezielt üben in zwei Spalten */
+  #home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:32px;row-gap:16px;align-content:start;
+    grid-template-areas:"top top" "today world" "lbl lbl" "paths paths" "topic topic" "made made"}
+  #home>#world{grid-area:world;padding:22px 22px 18px;justify-content:space-between}
+  #home>.top{grid-area:top;margin-bottom:8px}
+  #home>.today{grid-area:today;padding:28px 24px;gap:22px;justify-content:space-between}
+  #home>.label{grid-area:lbl;margin-top:20px}
+  #home>#paths{grid-area:paths;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:32px}
+  #home>#topicLine{grid-area:topic}
+  #home>#madeby{grid-area:made;padding-top:56px}
+  .today .goal,.today .goal svg{width:84px;height:84px}
+  .today .goal b{font-size:1.25rem}
+  .todaytxt b{font-size:1.55rem}
+  .btn.go{min-height:76px}
+  .btn.go b{font-size:1.45rem;font-weight:400}
+
+  /* Gezielt üben: links Regionen, rechts Antwortart und Start */
+  #setup{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);column-gap:40px;row-gap:16px;align-content:start;
+    grid-template-areas:"back back" "title title" "sub sub" "regions race" "regions alabel" "regions answers" "regions hint" "regions go" "regions .";grid-template-rows:repeat(8,auto) 1fr}
+  #setup>.back{grid-area:back}
+  #setup>#setupTitle{grid-area:title}
+  #setup>#setupSub{grid-area:sub}
+  #setup>#raceBox{grid-area:race;display:flex;flex-direction:column;gap:12px}
+  #setup>#raceBox[hidden]{display:none}
+  #setup>#regions{grid-area:regions;align-self:start}
+  #setup>.label{grid-area:alabel}
+  #setup>#answers{grid-area:answers}
+  #setup>#answerHint{grid-area:hint;margin:0}
+  #setup>#setupGo{grid-area:go;align-self:start}
+
+  /* Frage: mit großer Flagge zweispaltig (Flagge links, Antworten rechts), sonst eine mittige Spalte */
+  #game{max-width:1040px;width:100%;margin-inline:auto}
+  #game .hud{max-width:none}
+  .q{max-width:680px;width:100%;margin-inline:auto;padding-top:6vh}
+  .q h2{font-size:2rem}
+  .q .opts:not(.imgs){display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .opt{min-height:64px;font-size:1.15rem}
+  /* Flagge links, Frage, Antworten und Weiter rechts, beide Spalten gleich breit */
+  .q:has(.stage){max-width:960px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:48px;row-gap:16px;align-items:start;align-content:start;padding-top:3vh}
+  .q:has(.stage)>*{grid-column:2}
+  .q:has(.stage)>.stage{grid-column:1;grid-row:1/span 8;padding:32px;align-self:start;aspect-ratio:1;align-items:center}
+  .q:has(.stage)>.kicker{margin-top:0}
+  .q:has(.stage) .flag{max-width:none}
+  .q:has(.stage) .opts{display:flex}
+  .q:has(.stage) .opts.two{display:grid}
+  .q:has(.stage) .keyhole{max-width:none}
+  .q .flag.small{width:128px}
+  /* Landkarte links groß, Frage und Antworten rechts */
+  .q:has(.mapbox){max-width:1040px;display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);column-gap:40px;row-gap:16px;align-items:start;align-content:start;padding-top:3vh;text-align:left}
+  .q:has(.mapbox)>*{grid-column:2}
+  .q:has(.mapbox)>.mapbox{grid-column:1;grid-row:1/span 8}
+  .q:has(.mapbox)>.kicker{margin-top:0}
+  .q:has(.mapbox) .fb{align-items:flex-start}
+  .q:has(.mapbox) .fb .stars{align-self:flex-start}
+  .q:has(.mapbox) .opts{display:flex}
+  .mapbox svg{max-height:72vh}
+  .q:has(.imgs){max-width:960px}
+  .q .opts.imgs{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .q:has(.imgs)>.row{max-width:460px;margin-inline:auto}
+  .q:not(:has(.stage,.mapbox)){text-align:center}
+  .q:not(:has(.stage,.mapbox)) .fb{align-items:center}
+  .q:not(:has(.stage,.mapbox)) .fb .stars{align-self:center}
+  .q:not(:has(.stage,.mapbox)) .opt{text-align:left}
+  .q:not(:has(.stage,.mapbox))>.flag.small{align-self:center}
+
+  /* Ergebnis und Reisepass */
+  #result{max-width:760px;width:100%;margin-inline:auto}
+  /* Reisepass: Umschlag als breites Band, Visa als Leiste, darunter das Album in voller Breite */
+  #pass{gap:24px}
+  .cover{padding:22px 28px;gap:22px}
+  .cover h2{font-size:1.9rem}
+  .cover .globe{width:72px;height:72px}
+  .covermini{display:none}
+  .cover>.coverstats{display:flex;flex-direction:row;gap:40px;margin-left:auto}
+  .coverstats>div{display:flex;flex-direction:column;gap:2px;align-items:flex-end}
+  .coverstats b{font-family:var(--f-display);font-weight:400;font-size:1.5rem;color:var(--pass-gold);white-space:nowrap}
+  .coverstats small{font-size:.75rem;opacity:.8;letter-spacing:0;text-transform:none;font-weight:400;color:var(--pass-ink)}
+  .visa{padding:18px 22px}
+  .stamps{grid-template-columns:repeat(6,108px);justify-content:space-between;row-gap:14px}
+  .albumbar{flex-direction:row;align-items:center;gap:16px;flex-wrap:wrap}
+  .albumbar .seg{flex:none;width:300px}
+  .albumbar .seg.three{width:420px}
+  .stamp b{font-size:.85rem}.stamp small{font-size:.58rem}.stamp i{font-size:.6rem}
+  .album{grid-template-columns:repeat(6,minmax(0,1fr));gap:22px 16px;padding:22px 20px}
+}
+

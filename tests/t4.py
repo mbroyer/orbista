@@ -1,4 +1,4 @@
-# Playwright: Reisepass mit Sternen, Regionsstempel (+100 XP, nur einmal) und Bestzeiten
+# Playwright: Reisepass mit Sternen, Regionsstempel (Visum, nur einmal) und Bestzeiten
 import asyncio, os, json
 from playwright.async_api import async_playwright
 W = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/'
@@ -21,19 +21,22 @@ async def main():
         # Reisepass vor der Runde: noch kein Stempel, 14 Länder mit Sternen, 183 grau
         await pg.click('#passBtn')
         assert await pg.is_hidden('#home') and await pg.is_hidden('#madeby') and await pg.is_visible('#tabs')
-        assert await pg.locator('.tile').count() == 197
-        assert await pg.locator('.tile.grey').count() == 183
-        assert await pg.locator('.stamp.on').count() == 0
-        txt = await pg.inner_text('#pass'); assert '0:42,3' in txt and 'Flagge → Land · Europa · 10 Fragen' in txt, txt
-        await pg.click('#passKinds [data-k="c"]'); assert await pg.locator('.tile.grey').count() == 197
+        # Sammelalbum: zuerst die erste Region mit Lücken (Europa), Ozeanien komplett eingeklebt
+        assert await pg.locator('.stamp').count() == 18 and await pg.locator('.stamp.on').count() == 0
+        assert await pg.locator('.album .slot').count() == 46 and await pg.locator('.album .slot.empty').count() == 46
+        await pg.click('#passRegions [data-r="Ozeanien"]')
+        assert await pg.locator('.album .slot').count() == 14 and await pg.locator('.album .sticker').count() == 14
+        txt = await pg.inner_text('#pass'); assert '14 von 14 eingeklebt' in txt and '0:42,3' in txt and 'Flagge → Land · Europa · 10 Fragen' in txt, txt
+        await pg.click('#passKinds [data-k="c"]'); assert await pg.locator('.album .sticker').count() == 0 and await pg.locator('.album .slot.empty').count() == 14
+        await pg.click('#passKinds [data-k="f"]')
         await pg.click('#tabs [data-tab="home"]'); assert await pg.is_visible('#home')
 
-        # Runde Ozeanien, alles richtig: Stempel Ozeanien · Flaggen, +100 XP
+        # Runde Ozeanien, alles richtig: Visum Ozeanien · Flaggen, schaltet das Zeitrennen frei
         await pg.click('[data-p="f"]'); await pg.click('#regions [data-r="Ozeanien"]'); await pg.click('#answers [data-a="0"]'); await pg.click('#setupGo')
         for i in range(10):
             await pg.click('.opt[data-c="%s"]' % await pg.evaluate(CODE)); await pg.click('#nx')
-        txt = await pg.inner_text('#result'); print([l for l in txt.splitlines() if 'Stempel' in l])
-        assert 'Neuer Stempel im Reisepass: Ozeanien · Flaggen · +100 XP' in txt, txt
+        txt = await pg.inner_text('#result'); print([l for l in txt.splitlines() if 'Visum' in l])
+        assert 'Neues Visum im Reisepass: Ozeanien · Flaggen' in txt, txt
         P = await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))")
         assert 'Ozeanien|f' in P['stamps'] and len(P['stamps']) == 1, P
 
@@ -41,10 +44,13 @@ async def main():
         await pg.click('#new')
         for i in range(10):
             await pg.click('.opt[data-c="%s"]' % await pg.evaluate(CODE)); await pg.click('#nx')
-        assert 'Neuer Stempel' not in await pg.inner_text('#result')
-        await pg.click('#homeBtn'); await pg.click('#passBtn')
+        assert 'Neues Visum' not in await pg.inner_text('#result')
+        await pg.click('#homeBtn'); assert await pg.is_enabled('[data-p="race"]'), 'Zeitrennen nach dem ersten Visum offen'
+        await pg.click('#passBtn')
         assert await pg.locator('.stamp.on').count() == 1
         assert await pg.get_attribute('.stamp.on', 'data-stamp') == 'Ozeanien|f'
+        assert await pg.evaluate("/\\d\\d\\.\\d\\d\\.20\\d\\d/.test(document.querySelector('.stamp.on').textContent)"), 'Datum im Stempel'
+        assert 'unterwegs seit' in (await pg.inner_text('.cover')).lower() and '14 Länder besucht' in await pg.inner_text('.cover') and await pg.is_hidden('.coverstats')
         assert await pg.evaluate('document.documentElement.scrollWidth<=innerWidth'), 'Querscrollen'
         await pg.screenshot(path=W + 't4_pass.png', full_page=True)
         assert not errs, errs

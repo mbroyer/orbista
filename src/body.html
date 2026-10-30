@@ -1,23 +1,28 @@
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("orbista.theme")==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <main>
   <section id="welcome" class="screen" hidden>
+    <div class="sndrow"><span></span><button class="iconbtn themebtn"></button></div>
     <svg class="globe big" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26M4.5 8h21M4.5 22h21"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg>
     <h1 class="hero">Willkommen bei Orbista</h1>
-    <p class="muted lead">Zwei kurze Fragen, dann stellt Orbista deine erste Runde zusammen. Alles lässt sich später ändern.</p>
+    <p class="muted lead">Drei kurze Fragen, dann stellt Orbista deine erste Runde zusammen. Alles lässt sich später ändern.</p>
     <div class="label">1 · Was möchtest du lernen?</div>
     <div class="tri" id="wTopics"></div>
     <div class="label">2 · Wie viel Zeit am Tag?</div>
     <div class="lines" id="wGoals"></div>
-    <button class="btn" id="begin">Reise beginnen</button>
+    <div class="label">3 · Wo möchtest du anfangen?</div>
+    <div class="chips" id="wStart"></div>
+    <button class="btn primary" id="begin">Reise beginnen</button>
   </section>
 
   <section id="home" class="screen">
     <header class="top">
       <div class="brand"><svg class="globe" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg><h1>Orbista</h1></div>
-      <div class="topr"><button class="iconbtn" id="soundBtn"></button><span class="pill" id="lvlPill"></span></div>
+      <div class="topr"><button class="iconbtn themebtn"></button><button class="iconbtn sndbtn" id="soundBtn"></button></div>
     </header>
+    <div class="world" id="world"></div>
     <div class="card today">
       <div class="todayrow" id="status"></div>
-      <button class="btn go" id="go"><span><b>Weiterreisen</b><small id="goSub"></small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <button class="btn go primary" id="go"><span><b>Weiterreisen</b><small id="goSub"></small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     </div>
     <div class="label">Gezielt üben</div>
     <div class="lines" id="paths"></div>
@@ -26,7 +31,7 @@
   </section>
 
   <section id="setup" class="screen" hidden>
-    <div class="back"><button class="iconbtn" id="setupBack" aria-label="Zurück"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span class="muted">Gezielt üben</span></div>
+    <div class="back"><button class="iconbtn" id="setupBack" aria-label="Zurück"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span class="muted">Gezielt üben</span><button class="iconbtn themebtn"></button><button class="iconbtn sndbtn"></button></div>
     <h2 class="hero" id="setupTitle"></h2>
     <p class="muted lead" id="setupSub"></p>
     <div id="raceBox" hidden><div class="label">Strecke</div><div class="seg" id="raceKinds"></div></div>
@@ -34,13 +39,13 @@
     <div class="label">Antworten</div>
     <div class="seg" id="answers"></div>
     <p class="muted small" id="answerHint"></p>
-    <button class="btn go" id="setupGo"><span><b>Los geht’s</b><small id="setupGoSub"></small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <button class="btn go primary" id="setupGo"><span><b>Los geht’s</b><small id="setupGoSub"></small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </section>
 
   <section id="pass" class="screen" hidden></section>
 
   <section id="game" class="screen" hidden>
-    <div class="hud"><button class="iconbtn" id="quit" aria-label="Runde beenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="bar"><div id="prog"></div></div><div class="stat" id="hudScore"></div></div>
+    <div class="hud"><button class="iconbtn" id="quit" aria-label="Runde beenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="bar"><div id="prog"></div></div><div class="stat" id="hudScore"></div><button class="iconbtn themebtn"></button><button class="iconbtn sndbtn"></button></div>
     <div class="q" id="q"></div>
   </section>
 

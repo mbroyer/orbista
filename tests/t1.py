@@ -1,19 +1,29 @@
-# Playwright bei 390 px: erster Start, Weiterreisen, gezieltes Üben mit Auswählen und Eintippen, Übernahme des Flaggo-Stands, kein Querscrollen
+# Playwright bei 390 px: erster Start, Weiterreisen, gezieltes Üben mit Auswählen, Eintippen und Landkarte, Übernahme des Flaggo-Stands, kein Querscrollen
 import asyncio, os, json
 from playwright.async_api import async_playwright
 W = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/'
 
 # richtige Antwort zur aktuellen Frage (Kürzel und Spielart stehen an #q)
 ANSWER = """() => { const q = document.getElementById('q'), c = q.dataset.code, m = q.dataset.mode, D = ORBISTA_DATA;
-  if (['type', 'ctype', 'fctype'].includes(m)) return {m, v: m === 'type' ? (D.NAME_FIX[c] || new Intl.DisplayNames(['de'], {type: 'region'}).of(c))
+  if (m === 'loc') return {m, c, tap: true};
+  if (['type', 'ctype', 'fctype', 'mtype'].includes(m)) return {m, v: m === 'type' || m === 'mtype' ? (D.NAME_FIX[c] || new Intl.DisplayNames(['de'], {type: 'region'}).of(c))
     : D.CAPITAL[c].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')};
   return {m, c}; }"""
+
+async def tippe(pg, c):
+    # Land auf der Karte antippen; Kleinstaaten über ihren Kreis. Das Antippen selbst prüft t6 mit echten Klicks.
+    await pg.evaluate("""c => { const el = document.querySelector(`#map [data-c="${c}"]`), o = {bubbles: true, pointerId: 1};
+      el.dispatchEvent(new PointerEvent('pointerdown', o)); el.dispatchEvent(new PointerEvent('pointerup', o)); }""", c)
 
 async def antwort(pg, ok=True):
     a = await pg.evaluate(ANSWER)
     if 'v' in a:
         if ok: await pg.fill('#ti', a['v']); await pg.click('#tf button[type=submit]')
         else: await pg.click('#skip')
+    elif 'tap' in a: await tippe(pg, a['c'] if ok else ('FR' if a['c'] != 'FR' else 'DE'))
+    elif a['m'] == 'two':  # Zwei in Teilen: beide Länder antippen
+        c2 = await pg.get_attribute('#q', 'data-c2'); await pg.click('.opt[data-c="%s"]' % a['c'])
+        await pg.click('.opt[data-c="%s"]' % c2 if ok else '.opt:not([data-c="%s"]):not([data-c="%s"]) >> nth=0' % (a['c'], c2))
     elif ok: await pg.click('.opt[data-c="%s"]' % a['c'])
     else: await pg.click('.opt:not(.ok):not([data-c="%s"]) >> nth=0' % a['c'])
     return a['m']
@@ -29,7 +39,7 @@ async def gezielt(pg, path, typing, ok):
     await pg.click('[data-p="%s"]' % path); await pg.click('#regions [data-r="Europa"]')
     await pg.click('#answers [data-a="%d"]' % typing); await pg.click('#setupGo')
     modes, score = await runde(pg, ok); print(path, typing, sorted(modes), score)
-    want = {('f', 0): {'f2l', 'l2f'}, ('f', 1): {'type'}, ('c', 0): {'l2c', 'c2l'}, ('c', 1): {'ctype'}}[(path, typing)]
+    want = {('f', 0): {'f2l', 'l2f'}, ('f', 1): {'type'}, ('c', 0): {'l2c', 'c2l'}, ('c', 1): {'ctype'}, ('m', 0): {'loc', 'mark'}, ('m', 1): {'mtype'}}[(path, typing)]
     assert modes <= want, modes
     if ok: assert score == '10 / 10', score
     await pg.click('#homeBtn')
@@ -47,8 +57,22 @@ async def main():
         # erster Start: Willkommen, ohne Leiste unten
         assert await pg.is_visible('#welcome') and await pg.is_hidden('#home') and await pg.is_hidden('#tabs')
         await pg.screenshot(path=W + 't1_willkommen.png')
-        await pg.click('#wTopics [data-t="both"]'); await pg.click('#wGoals [data-g="100"]'); await pg.click('#begin')
-        P = await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))"); assert P['topic'] == 'both' and P['goal'] == 100, P
+        await pg.click('#wTopics [data-t="both"]'); await pg.click('#wGoals [data-g="20"]'); await pg.click('#begin')
+        P = await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))"); assert P['topic'] == 'both' and P['goalQ'] == 20 and 'goal' not in P, P
+        # erster Start geht direkt in die erste Runde (neue Karten aus Europa), danach Startseite
+        assert await pg.is_visible('#game') and await pg.is_hidden('#home') and await pg.is_hidden('#tabs')
+        # Stummschalter auch im Quiz, gilt überall
+        await pg.click('#game .sndbtn'); assert await pg.get_attribute('#soundBtn', 'aria-pressed') == 'false'
+        await pg.click('#game .sndbtn'); assert await pg.get_attribute('#game .sndbtn', 'aria-pressed') == 'true'
+        modes, score = await runde(pg); print('erste Runde', sorted(modes), score)
+        assert score == '10 / 10', score  # DE und FR haben 2 Sterne, dort wird getippt
+        assert await pg.is_visible('#result .sndbtn')
+        await pg.click('#homeBtn')
+        # Deine Welt: jedes Land hat Punkte, nach der ersten Runde leuchten neue Länder auf
+        assert await pg.evaluate("Object.keys(ORBISTA_DOTS.c).length") == 197
+        world = await pg.inner_text('#world'); print(world.replace('\n', ' | '))
+        assert 'Deine Welt' in world and 'Heute neu auf der Karte' in world, world
+        assert await pg.locator('#world .dots circle.s1').count() > 0 and await pg.locator('#world .dots circle.n').count() > 0
         paths = await pg.inner_text('#paths'); print(paths.splitlines()[:2])
         assert '2 von 197 gekonnt' in paths, paths
         assert await pg.is_visible('#madeby') and await pg.is_visible('#tabs')
@@ -61,14 +85,14 @@ async def main():
         assert (await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))"))['sound'] is False
         await pg.click('#soundBtn')
 
-        # Weiterreisen bei „Beides“: neue Karten aus Europa, gemischt aus Flaggen- und Hauptstadtfragen
+        # Weiterreisen bei „Alles“: neue Karten aus Europa, gemischt aus Flaggen-, Hauptstadt- und Kartenfragen
         sub = await pg.inner_text('#goSub'); assert 'Europa' in sub, sub
         await pg.click('#go'); assert await pg.is_hidden('#madeby') and await pg.is_hidden('#tabs')
         modes, score = await runde(pg); print('weiter', sorted(modes), score)
-        assert score == '10 / 10', score  # DE und FR haben 2 Sterne, dort wird getippt
+        assert score == '10 / 10', score
         await pg.click('#homeBtn')
 
-        for path in ('f', 'c'):
+        for path in ('f', 'c', 'm'):
             for typing in (0, 1):
                 await gezielt(pg, path, typing, ok=False)
         await gezielt(pg, 'c', 1, ok=True)
@@ -77,8 +101,31 @@ async def main():
 
         # Thema ändern führt zurück zum ersten Schritt
         await pg.click('#changeTopic'); assert await pg.is_visible('#welcome')
-        await pg.click('#wTopics [data-t="cap"]'); await pg.click('#begin')
+        assert await pg.get_attribute('#wStart [data-r="Europa"]', 'aria-pressed') == 'true'
+        await pg.click('#wTopics [data-t="cap"]'); await pg.click('#wStart [data-r="Asien"]'); await pg.click('#begin')
         assert 'Hauptstädte' in await pg.inner_text('#topicLine')
+        # Startregion: Weiterreisen nimmt neue Karten zuerst aus Asien
+        assert (await pg.evaluate("JSON.parse(localStorage.getItem('orbista.profile'))"))['start'] == 'Asien'
+        pg2 = await (await b.new_context(viewport={'width': 390, 'height': 844})).new_page(); pg2.on('pageerror', lambda e: errs.append(str(e)))
+        await pg2.goto('file://' + W + 'orbista.html'); await pg2.wait_for_timeout(300)
+        await pg2.click('#wStart [data-r="Asien"]'); await pg2.click('#begin')
+        asien = set((await pg2.evaluate("ORBISTA_DATA.REGIONS['Asien']")).split())
+        codes = []
+        for i in range(10):
+            codes.append(await pg2.get_attribute('#q', 'data-code')); await antwort(pg2); await pg2.click('#nx')
+        assert all(c in asien for c in codes), codes
+        await pg2.click('#homeBtn'); assert 'Asien' in await pg2.inner_text('#goSub')
+        # Startregion „Ganze Welt“: neue Karten aus allen Regionen
+        pg3 = await (await b.new_context(viewport={'width': 390, 'height': 844})).new_page(); pg3.on('pageerror', lambda e: errs.append(str(e)))
+        await pg3.goto('file://' + W + 'orbista.html'); await pg3.wait_for_timeout(300)
+        assert await pg3.inner_text('#wStart [data-r="Alle"]') == 'Ganze Welt'
+        await pg3.click('#wStart [data-r="Alle"]'); await pg3.click('#begin')
+        regs = await pg3.evaluate("Object.fromEntries(Object.entries(ORBISTA_DATA.REGIONS).flatMap(([r, l]) => l.split(' ').map(c => [c, r])))")
+        welt = set()
+        for i in range(10):
+            welt.add(regs[await pg3.get_attribute('#q', 'data-code')]); await antwort(pg3); await pg3.click('#nx')
+        assert len(welt) >= 2, welt
+        await pg3.click('#homeBtn'); assert 'Ganze Welt' in await pg3.inner_text('#goSub')
         await pg.screenshot(path=W + 't1_ende.png', full_page=True)
         assert await pg.evaluate("!!localStorage.getItem('orbista.mastery')")
         assert not errs, errs

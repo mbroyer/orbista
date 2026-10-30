@@ -39,10 +39,37 @@ button:disabled{opacity:.5;cursor:wait}
 .madeby{display:flex;flex-direction:column;align-items:center;gap:8px;opacity:.75;text-decoration:none;margin-top:auto}
 .madeby img{width:58px;height:auto;display:block;filter:var(--logo-filter)}
 .madeby span{font-size:8px;line-height:1;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink)}
+/* Vorschau oben (wie bei NumNum), nur für Gäste ohne Code auf diesem Gerät */
+.pv{width:100%;max-width:740px;text-align:center;display:flex;flex-direction:column;gap:32px}
+.pv h1{font:400 clamp(52px,14vw,88px)/1 var(--f-display);letter-spacing:-.01em}
+.pv h1 span{color:var(--gold)}
+.pv .lead{color:var(--ink);font-size:1.1rem;max-width:26em;margin:0 auto}
+.shots{display:flex;gap:24px;justify-content:center;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 16px 10px;margin:0 -16px}
+.shots figure{margin:0;flex:0 0 auto;width:220px;scroll-snap-align:center;display:flex;flex-direction:column;gap:8px}
+.shots img{width:220px;height:auto;display:block;border-radius:26px;border:6px solid var(--ink);box-shadow:0 18px 40px rgba(29,43,58,.22)}
+.shots figcaption{font-size:.92rem;color:var(--muted)}
+.steps{list-style:none;margin:0 auto;padding:0;max-width:560px;width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:left}
+.steps li{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;font-size:.92rem;color:var(--muted)}
+.steps b{display:block;color:var(--gold);font:400 1.5rem/1 var(--f-display);margin-bottom:6px}
+@media (max-width:520px){.steps{grid-template-columns:1fr}.shots{justify-content:flex-start}.shots img,.shots figure{width:200px}}
 </style>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("orbista.theme")==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 </head>
 <body>
+<section class="pv" id="pv" aria-label="Vorschau" hidden>
+  <h1>Orbi<span>sta</span></h1>
+  <p class="lead">Länder-Quiz mit 197 Flaggen und Hauptstädten. Weiterreisen, Sterne sammeln, Stempel in den Reisepass.</p>
+  <div class="shots">
+    <figure><img src="vorschau-1.jpg" alt="Startseite mit Tagesziel und dem Knopf Weiterreisen" width="390" height="620"><figcaption>Jeden Tag ein Stück weiterreisen</figcaption></figure>
+    <figure><img src="vorschau-2.jpg" alt="Frage: Welches Land hat diese Flagge? Die Flagge der Seychellen" width="390" height="620" loading="lazy"><figcaption>Flagge erkennen, Land wählen</figcaption></figure>
+    <figure><img src="vorschau-3.jpg" alt="Ergebnis 10 von 10 mit Sternen und Tagesziel" width="390" height="620" loading="lazy"><figcaption>Sterne und Stempel sammeln</figcaption></figure>
+  </div>
+  <ol class="steps">
+    <li><b>1</b>Thema wählen: Flaggen, Hauptstädte oder beides</li>
+    <li><b>2</b>Runden mit 10 Fragen, erst auswählen, später eintippen</li>
+    <li><b>3</b>Region für Region die Welt bereisen und Stempel sammeln</li>
+  </ol>
+</section>
 <form class="card" id="f" hidden>
   <div class="brand"><svg class="globe" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg><h1>Orbista</h1></div>
   <p>Flaggen und Hauptstädte der Welt, Runde für Runde.</p>
@@ -79,7 +106,7 @@ button:disabled{opacity:.5;cursor:wait}
       k.appendChild(x);});
     return a.length;
   }
-  function ask(msg){var n=pick();w.hidden=true;f.hidden=false;document.getElementById('d').hidden=!!n;
+  function ask(msg){var n=pick();w.hidden=true;f.hidden=false;document.getElementById('d').hidden=!!n;document.getElementById('pv').hidden=!!n; // wer hier schon gespielt hat, braucht die Vorschau nicht
     document.getElementById('mb').hidden=false;e.textContent=msg||'';b.disabled=false;if(msg&&!k.childNodes.length)c.focus();}
   function fail(err){var m={code:'Diesen Reise-Code gibt es nicht.',net:'Keine Verbindung. Bitte später nochmal versuchen.'};ask(m[err&&err.message]||'Das hat nicht geklappt. Bitte nochmal versuchen.');}
   function remote(code){

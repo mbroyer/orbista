@@ -112,6 +112,18 @@ details a,.ask a{color:var(--accent-text);font-weight:700}
 .err{color:var(--bad);font-weight:600;min-height:1.4em}
 .small{font-size:.92rem}.small a{color:var(--ink);font-weight:600}
 @media (max-width:760px){.sheet .card{border-width:2px 0 0;box-shadow:none;border-radius:20px 20px 0 0}}
+/* Vorschau als schwebende Karte (Variante C): kein Handyrahmen, dahinter ein kleiner Stapel für die übrigen Schritte */
+.phone{position:relative;width:250px;margin-block:14px}
+.phone img{position:relative;z-index:2;border:0;border-radius:22px;box-shadow:0 0 0 1px var(--line),0 2px 4px rgba(0,0,0,.06),0 28px 56px -16px rgba(0,0,0,.35)}
+.phone::before,.phone::after{content:"";position:absolute;inset:0;border-radius:22px;background:var(--surface2);box-shadow:0 0 0 1px var(--line),0 10px 30px -12px rgba(0,0,0,.25)}
+.phone::before{transform:rotate(-6deg) translate(-16px,6px);z-index:0;opacity:.7}
+.phone::after{transform:rotate(4deg) translate(14px,4px);z-index:1}
+@media (max-width:760px){
+  .phone{width:200px;margin-block:10px 16px}
+  /* Reiter: lange Wörter trennen statt über den Rahmen laufen */
+  .steps button{padding-inline:3px}
+  .steps strong{font-size:.85rem;-webkit-hyphens:auto;hyphens:auto;overflow-wrap:anywhere}
+}
 </style>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("orbista.theme")==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 </head>

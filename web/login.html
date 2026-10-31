@@ -9,81 +9,155 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
 <style>
-/* Anmeldung im Stil „Atlas“ wie die App */
-:root{--bg:#f3eee3;--card:#fbf8f1;--ink:#1d2b3a;--muted:#5e6670;--line:#ddd3c0;--gold:#b5701c;--bad:#b03a2e;--contour:#d9cfbc;--logo-filter:none;--cta:#e58a33;--cta-ink:#1d2b3a;color-scheme:light;
-  --f-display:"Young Serif",Georgia,serif;--f-body:"IBM Plex Sans",system-ui,sans-serif}
-:root[data-theme="dark"]{--bg:#111a24;--card:#18232f;--ink:#ede6d6;--muted:#a2a9b0;--line:#2c3a48;--gold:#e0a458;--bad:#f08a7e;--contour:#1f2b37;--logo-filter:brightness(0) invert(1);--cta:#e89a4c;--cta-ink:#111a24;color-scheme:dark}
+/* Übersicht nach Entwurf C (geführte Tour) wie bei NumNum, im Stil „Atlas“ der App */
+:root{--bg:#f3eee3;--card:#fbf8f1;--surface:#fbf8f1;--surface2:#f3eee3;--ink:#1d2b3a;--muted:#5e6670;--line:#ddd3c0;--gold:#b5701c;--bad:#b03a2e;--contour:#d9cfbc;--logo-filter:none;--cta:#e58a33;--cta-ink:#1d2b3a;color-scheme:light;
+  --f-display:"Young Serif",Georgia,serif;--f-body:"IBM Plex Sans",system-ui,sans-serif;
+  --accent:var(--cta);--accent-text:var(--gold);--accent-ink:var(--cta-ink);--accent-edge:var(--ink);--dot:var(--gold);--focus:var(--gold);--bezel:var(--ink);--shadow:.22;--bar:rgba(243,238,227,.92);--scrim:rgba(29,43,58,.55);
+  --body-font:17px/1.45 var(--f-body);--step-font:400 1.2rem/1.2 var(--f-display);--h2-font:400 1.6rem/1.2 var(--f-display);--btn-font:400 1.15rem/1.2 var(--f-display);--btn-track:0;--btn-case:none;--btn-radius:10px}
+:root[data-theme="dark"]{--bg:#111a24;--card:#18232f;--surface:#18232f;--surface2:#111a24;--ink:#ede6d6;--muted:#a2a9b0;--line:#2c3a48;--gold:#e0a458;--bad:#f08a7e;--contour:#1f2b37;--logo-filter:brightness(0) invert(1);--cta:#e89a4c;--cta-ink:#111a24;color-scheme:dark;--bar:rgba(17,26,36,.92);--scrim:rgba(5,9,14,.72);--shadow:.45}
 *{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:var(--body-font)}
 [hidden]{display:none!important}
-body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:17px/1.45 var(--f-body);display:flex;flex-direction:column;align-items:center;gap:36px;padding:48px 16px 40px;
-  background-image:repeating-radial-gradient(ellipse 140% 90% at 20% -10%,transparent 0 38px,var(--contour) 38px 39px);background-size:100% 320px;background-repeat:no-repeat}
-.card{width:100%;max-width:400px;background:var(--card);border:2px solid var(--ink);border-radius:14px;box-shadow:4px 4px 0 var(--ink);padding:24px 22px;display:flex;flex-direction:column;gap:14px}
-.brand{display:flex;align-items:center;gap:10px}
-.globe{width:34px;height:34px;fill:none;stroke:var(--ink);stroke-width:1.6}.globe .dot{fill:var(--gold);stroke:none}
-h1{font:400 2rem/1.1 var(--f-display);margin:0}
-h2{font:400 1.35rem/1.2 var(--f-display);margin:0}
-p{margin:0;color:var(--muted)}
-input{width:100%;font:600 1.25rem/1 var(--f-body);letter-spacing:.06em;padding:14px;border-radius:10px;border:2px solid var(--ink);background:var(--bg);color:var(--ink);text-align:center;text-transform:uppercase}
-input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
-button,.ghost{font:inherit;color:var(--ink);cursor:pointer;background:var(--card);border:2px solid var(--ink);border-radius:10px;box-shadow:3px 3px 0 var(--ink);padding:13px 18px;font-weight:600;text-decoration:none;text-align:center}
-button:active,.ghost:active{transform:translate(3px,3px);box-shadow:none}
-button:disabled{opacity:.5;cursor:wait}
-#b{background:var(--cta);color:var(--cta-ink);font:400 1.3rem/1.2 var(--f-display);padding:15px 18px;box-shadow:4px 4px 0 var(--ink)}
-.who{display:flex;flex-wrap:wrap;gap:10px}
-.who button{flex:1 1 auto;letter-spacing:.06em}
-.err{color:var(--bad);font-weight:600;min-height:1.4em}
-.small{font-size:.92rem}
-.small a{color:var(--ink);font-weight:600}
-.demo{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
-.demo small{color:var(--muted);font-size:.85rem}
-.madeby{display:flex;flex-direction:column;align-items:center;gap:8px;opacity:.75;text-decoration:none;margin-top:auto}
+a{color:inherit}
+button,input{font:inherit}
+.pv{max-width:980px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-right)) calc(110px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:14px;font-size:.9rem}
+.top a{color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:8px}
+.top a:hover{color:var(--ink)}
+.top img{width:26px;height:auto;filter:var(--logo-filter);opacity:.8}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1.5px solid var(--line);color:var(--muted);font-size:.8rem;font-weight:600}
+.chip i{width:7px;height:7px;border-radius:50%;background:var(--dot)}
+.hero{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;padding-block:18px 26px}
+.hero h1{margin:0}
+.hero p{margin:0;font-size:1.15rem;max-width:28em}
+.tour{display:grid;grid-template-columns:280px 1fr;gap:48px;align-items:center;background:var(--surface);border-radius:30px;padding:30px 44px}
+.phone{justify-self:center;width:230px}
+.phone img{width:100%;height:auto;display:block;border-radius:32px;border:8px solid var(--bezel);box-shadow:0 0 0 2px var(--line),0 26px 50px rgba(0,0,0,var(--shadow))}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.steps button{width:100%;text-align:left;display:grid;grid-template-columns:40px 1fr;gap:4px 14px;align-items:start;color:var(--muted);background:none;border:2px solid transparent;border-radius:20px;padding:16px;cursor:pointer}
+.steps button:hover{background:var(--surface2)}
+.steps button[aria-selected="true"]{background:var(--surface2);border-color:var(--accent);color:var(--ink)}
+.steps b{grid-row:span 2;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--line);color:var(--ink);font-size:1.1rem}
+.steps [aria-selected="true"] b{background:var(--accent);color:var(--accent-ink)}
+.steps strong{font:var(--step-font);color:var(--ink)}
+.steps span{font-size:.95rem}
+.cap{display:none}
+h2{font:var(--h2-font);margin:56px 0 14px}
+details{border-top:1.5px solid var(--line);padding-block:14px}
+details:last-of-type{border-bottom:1.5px solid var(--line)}
+summary{cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--accent-text);font-size:1.3rem;line-height:1}
+details[open] summary::after{content:"–"}
+details p{margin:8px 0 0;color:var(--muted);max-width:40em}
+details a,.ask a{color:var(--accent-text);font-weight:700}
+.madeby{display:flex;flex-direction:column;align-items:center;gap:8px;opacity:.75;text-decoration:none;padding-block:48px 8px}
 .madeby img{width:58px;height:auto;display:block;filter:var(--logo-filter)}
 .madeby span{font-size:8px;line-height:1;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink)}
-/* Vorschau oben (wie bei NumNum), nur für Gäste ohne Code auf diesem Gerät */
-.pv{width:100%;max-width:740px;text-align:center;display:flex;flex-direction:column;gap:32px}
-.pv h1{font:400 clamp(52px,14vw,88px)/1 var(--f-display);letter-spacing:-.01em}
-.pv h1 span{color:var(--gold)}
-.pv .lead{color:var(--ink);font-size:1.1rem;max-width:26em;margin:0 auto}
-.shots{display:flex;gap:24px;justify-content:center;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 16px 10px;margin:0 -16px}
-.shots figure{margin:0;flex:0 0 auto;width:220px;scroll-snap-align:center;display:flex;flex-direction:column;gap:8px}
-.shots img{width:220px;height:auto;display:block;border-radius:26px;border:6px solid var(--ink);box-shadow:0 18px 40px rgba(29,43,58,.22)}
-.shots figcaption{font-size:.92rem;color:var(--muted)}
-.steps{list-style:none;margin:0 auto;padding:0;max-width:560px;width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:left}
-.steps li{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;font-size:.92rem;color:var(--muted)}
-.steps b{display:block;color:var(--gold);font:400 1.5rem/1 var(--f-display);margin-bottom:6px}
-@media (max-width:520px){.steps{grid-template-columns:1fr}.shots{justify-content:flex-start}.shots img,.shots figure{width:200px}}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--bar);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1.5px solid var(--line);padding:12px max(16px,env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.bar div{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.bar p{margin:0 auto 0 0;font-size:.9rem;color:var(--muted)}
+.bar p strong{color:var(--ink);display:block;font-size:1rem}
+.btn{display:inline-block;text-align:center;font:var(--btn-font);letter-spacing:var(--btn-track);text-transform:var(--btn-case);padding:13px 24px;border-radius:var(--btn-radius);border:0;background:var(--accent);color:var(--accent-ink);box-shadow:0 4px 0 var(--accent-edge);cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--accent-edge)}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px var(--line)}
+.btn:focus-visible,.steps button:focus-visible,summary:focus-visible,.top a:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+@media (max-width:760px){
+  .hero{padding-block:8px 18px}
+  .tour{grid-template-columns:1fr;gap:18px;padding:22px 14px;border-radius:24px}
+  .phone{width:180px;order:2}
+  .steps{flex-direction:row;gap:6px}
+  .steps li{flex:1;min-width:0}
+  .steps button{grid-template-columns:1fr;justify-items:center;text-align:center;padding:10px 6px;gap:6px}
+  .steps b{grid-row:auto;width:32px;height:32px;font-size:.95rem}
+  .steps strong{font-size:.9rem;line-height:1.2}
+  .steps span{display:none}
+  .cap{display:block;text-align:center;color:var(--muted);font-size:.95rem;margin:0;min-height:3em}
+  .bar p{display:none}
+  .bar .btn{flex:1;padding-inline:10px}
+}
+/* Code-Blatt */
+.sheet{position:fixed;inset:0;z-index:9;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:16px}
+.sheet .card{position:relative;width:100%;max-width:400px;animation:up .25s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:0}}
+.x{position:absolute;top:10px;left:12px;width:40px;height:40px;border:0!important;box-shadow:none!important;border-radius:50%;background:none!important;color:var(--muted);font-size:1.7rem;line-height:1;cursor:pointer;padding:0}
+.err:empty{display:none}
+.wait{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px}
+@media (prefers-reduced-motion:reduce){.sheet .card{animation:none}}
+@media (max-width:760px){
+  .sheet{align-items:flex-end;padding:0}
+  .sheet .card{max-width:none;border-radius:26px 26px 0 0;padding-bottom:calc(26px + env(safe-area-inset-bottom))}
+}
+.pv{background-image:repeating-radial-gradient(ellipse 140% 90% at 20% -10%,transparent 0 38px,var(--contour) 38px 39px);background-size:100% 320px;background-repeat:no-repeat}
+.hero h1{font:400 clamp(52px,14vw,88px)/1 var(--f-display);letter-spacing:-.01em}
+.hero h1 span{color:var(--gold)}
+.tour{border:2px solid var(--ink);border-radius:14px;box-shadow:4px 4px 0 var(--ink)}
+.steps button{border-radius:10px}
+.steps button[aria-selected="true"]{border-color:var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.steps b{font:400 1.1rem/1 var(--f-display)}
+.steps [aria-selected="true"] b{background:var(--gold);color:var(--bg)}
+.btn{border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.btn:active{transform:translate(3px,3px);box-shadow:none}
+.btn.ghost{background:var(--card);box-shadow:3px 3px 0 var(--ink)}
+/* Formular im Blatt */
+.card{background:var(--card);border:2px solid var(--ink);border-radius:14px;box-shadow:4px 4px 0 var(--ink);padding:26px 22px;display:flex;flex-direction:column;gap:14px;text-align:center}
+.card h1,.card h2{font:400 1.4rem/1.2 var(--f-display);margin:0}
+.card p{margin:0;color:var(--muted)}
+.card input{width:100%;font:600 1.25rem/1 var(--f-body);letter-spacing:.06em;padding:14px;border-radius:10px;border:2px solid var(--ink);background:var(--bg);color:var(--ink);text-align:center;text-transform:uppercase}
+.card input:focus-visible,.who button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.who{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.who button{font:600 1rem/1 var(--f-body);letter-spacing:.06em;color:var(--ink);cursor:pointer;background:var(--card);border:2px solid var(--ink);border-radius:10px;box-shadow:3px 3px 0 var(--ink);padding:12px 16px}
+.who button:disabled,.card .btn:disabled{opacity:.5;cursor:wait}
+.card .btn{font-size:1.3rem;padding:15px 18px;box-shadow:4px 4px 0 var(--ink)}
+.err{color:var(--bad);font-weight:600;min-height:1.4em}
+.small{font-size:.92rem}.small a{color:var(--ink);font-weight:600}
+@media (max-width:760px){.sheet .card{border-width:2px 0 0;box-shadow:none;border-radius:20px 20px 0 0}}
 </style>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("orbista.theme")==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 </head>
 <body>
-<section class="pv" id="pv" aria-label="Vorschau" hidden>
-  <h1>Orbi<span>sta</span></h1>
-  <p class="lead">Länder-Quiz mit 197 Flaggen und Hauptstädten. Weiterreisen, Sterne sammeln, Stempel in den Reisepass.</p>
-  <div class="shots">
-    <figure><img src="vorschau-1.jpg" alt="Startseite mit Tagesziel und dem Knopf Weiterreisen" width="390" height="620"><figcaption>Jeden Tag ein Stück weiterreisen</figcaption></figure>
-    <figure><img src="vorschau-2.jpg" alt="Frage: Welches Land hat diese Flagge? Die Flagge der Seychellen" width="390" height="620" loading="lazy"><figcaption>Flagge erkennen, Land wählen</figcaption></figure>
-    <figure><img src="vorschau-3.jpg" alt="Ergebnis 10 von 10 mit Sternen und Tagesziel" width="390" height="620" loading="lazy"><figcaption>Sterne und Stempel sammeln</figcaption></figure>
+<div class="pv" id="pv" hidden>
+<nav class="top"><a href="/"><img src="/logo.png" alt="" width="320" height="354">← Alle Experimente</a><span class="chip"><i></i>im Test</span></nav>
+<header class="hero">
+<h1>Orbi<span>sta</span></h1>
+<p>Länder-Quiz mit 197 Flaggen und Hauptstädten. Weiterreisen, Sterne sammeln, Stempel in den Reisepass.</p>
+</header>
+<section class="tour" aria-label="So läuft es">
+  <div class="phone"><img id="ph" src="vorschau-1.jpg" alt="Startseite mit Tagesziel und dem Knopf Weiterreisen" width="390" height="620"></div>
+  <div>
+   <ol class="steps" role="tablist" aria-label="Schritte">
+    <li><button type="button" role="tab" aria-selected="true" data-img="vorschau-1.jpg" data-alt="Startseite mit Tagesziel und dem Knopf Weiterreisen"><b>1</b><strong>Weiterreisen</strong><span>Jeden Tag ein Stück weiter, mit eigenem Tagesziel.</span></button></li>
+    <li><button type="button" role="tab" aria-selected="false" data-img="vorschau-2.jpg" data-alt="Frage: Welches Land hat diese Flagge? Die Flagge der Seychellen"><b>2</b><strong>Flaggen erkennen</strong><span>Runden mit 10 Fragen, erst auswählen, später eintippen.</span></button></li>
+    <li><button type="button" role="tab" aria-selected="false" data-img="vorschau-3.jpg" data-alt="Ergebnis 10 von 10 mit Sternen und Tagesziel"><b>3</b><strong>Stempel sammeln</strong><span>Sterne für jedes Land, Stempel für jede Region im Reisepass.</span></button></li>
+   </ol>
+   <p class="cap" id="cap">Jeden Tag ein Stück weiter, mit eigenem Tagesziel.</p>
   </div>
-  <ol class="steps">
-    <li><b>1</b>Thema wählen: Flaggen, Hauptstädte oder beides</li>
-    <li><b>2</b>Runden mit 10 Fragen, erst auswählen, später eintippen</li>
-    <li><b>3</b>Region für Region die Welt bereisen und Stempel sammeln</li>
-  </ol>
 </section>
-<form class="card" id="f" hidden>
-  <div class="brand"><svg class="globe" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13"/><ellipse cx="15" cy="15" rx="6" ry="13"/><path d="M2 15h26"/><circle class="dot" cx="22" cy="8" r="2.5"/></svg><h1>Orbista</h1></div>
-  <p>Flaggen und Hauptstädte der Welt, Runde für Runde.</p>
+<h2>Gut zu wissen</h2>
+<details open><summary>Brauche ich einen Code?</summary><p>Zum Ausprobieren nicht: Die Demo läuft ohne Code. Wer weiterreisen will, bekommt einen Reise-Code von Mark. <a href="mailto:hello@asimplemanslab.com?subject=Reise-Code%20f%C3%BCr%20Orbista">Code anfragen</a></p></details>
+<details><summary>Wird etwas gespeichert?</summary><p>In der Demo nichts. Mit Reise-Code bleiben Sterne, Stempel und Serie gespeichert, auf jedem Gerät, auf dem du den Code eingibst.</p></details>
+<details><summary>Was kann man lernen?</summary><p>Alle 197 Flaggen und Hauptstädte, dazu die Lage der Länder auf der Landkarte.</p></details>
+<details><summary>Auf welchen Geräten läuft Orbista?</summary><p>Im Browser auf Handy, Tablet und Computer. Installieren muss man nichts.</p></details>
+<a class="madeby" href="/"><span>Made with love by</span><img src="/logo.png" alt="A Simple Man’s Lab" width="320" height="354"></a>
+</div>
+<nav class="bar" id="bar" aria-label="Loslegen" hidden><div>
+  <p><strong>Neugierig?</strong>Eine Runde geht ohne Code.</p>
+  <button class="btn ghost" type="button" id="oc">Code eingeben</button>
+  <a class="btn" href="?demo">Demo starten</a>
+</div></nav>
+<div class="sheet" id="sh" hidden>
+<form class="card" id="f" role="dialog" aria-modal="true" aria-labelledby="fh">
+  <button class="x" type="button" id="x" aria-label="Schließen">×</button>
   <h2 id="fh">Dein Reise-Code</h2>
   <p id="fp">Gib den Code ein, den du von Mark bekommen hast. Mit dem Code ist dein Fortschritt auf jedem Gerät da.</p>
   <div class="who" id="k" hidden></div>
   <input id="c" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Reise-Code" placeholder="CODE">
-  <button id="b">Losreisen</button>
+  <button class="btn" id="b">Losreisen</button>
   <div class="err" id="e" role="alert"></div>
   <p class="small">Noch keinen Code? <a href="mailto:hello@asimplemanslab.com?subject=Reise-Code%20f%C3%BCr%20Orbista">Schreib Mark</a>, dann bekommst du einen.</p>
 </form>
-<div class="demo" id="d" hidden><a class="ghost" href="?demo">Ohne Code ausprobieren</a><small>Nichts wird gespeichert.</small></div>
-<a class="madeby" id="mb" href="/" hidden><span>Made with love by</span><img src="/logo.png" alt="A Simple Man’s Lab" width="320" height="354"></a>
-<div class="card" id="w"><h1>Orbista</h1><p>Lädt …</p></div>
+</div>
+<div class="wait" id="w"><div class="card"><h1>Orbista</h1><p>Lädt …</p></div></div>
 <script>
 (function(){
   // Anmeldung mit Reise-Code wie bei NumNum: der Cloudflare-Worker prüft den Code und hält den Spielstand pro Code.
@@ -106,8 +180,21 @@ button:disabled{opacity:.5;cursor:wait}
       k.appendChild(x);});
     return a.length;
   }
-  function ask(msg){var n=pick();w.hidden=true;f.hidden=false;document.getElementById('d').hidden=!!n;document.getElementById('pv').hidden=!!n; // wer hier schon gespielt hat, braucht die Vorschau nicht
-    document.getElementById('mb').hidden=false;e.textContent=msg||'';b.disabled=false;if(msg&&!k.childNodes.length)c.focus();}
+  // Code-Blatt: öffnet über „Code eingeben“, bei einer Fehlermeldung und für Geräte, auf denen schon jemand gespielt hat.
+  var sh=document.getElementById('sh'),oc=document.getElementById('oc');
+  function sheet(open){sh.hidden=!open;document.body.style.overflow=open?'hidden':'';}
+  function ask(msg){var n=pick();w.hidden=true;document.getElementById('pv').hidden=false;document.getElementById('bar').hidden=false;
+    oc.textContent=n?'Weiterreisen':'Code eingeben';
+    e.textContent=msg||'';b.disabled=false;sheet(!!(n||msg));if(msg&&!k.childNodes.length)c.focus();}
+  oc.addEventListener('click',function(){sheet(true);if(!k.childNodes.length)c.focus();});
+  document.getElementById('x').addEventListener('click',function(){sheet(false);});
+  sh.addEventListener('click',function(ev){if(ev.target===sh)sheet(false);});
+  addEventListener('keydown',function(ev){if(ev.key==='Escape'&&!sh.hidden)sheet(false);});
+  // Tour: die Schritte wechseln das Handybild
+  var tabs=[].slice.call(document.querySelectorAll('.steps [role=tab]')),ph=document.getElementById('ph'),cap=document.getElementById('cap');
+  tabs.forEach(function(t){t.addEventListener('click',function(){
+    tabs.forEach(function(u){u.setAttribute('aria-selected',u===t);});
+    ph.src=t.getAttribute('data-img');ph.alt=t.getAttribute('data-alt');cap.textContent=t.querySelector('span').textContent;});});
   function fail(err){var m={code:'Diesen Reise-Code gibt es nicht.',net:'Keine Verbindung. Bitte später nochmal versuchen.'};ask(m[err&&err.message]||'Das hat nicht geklappt. Bitte nochmal versuchen.');}
   function remote(code){
     return fetch(WORKER+'/stand/'+encodeURIComponent(code),{cache:'no-store'}).then(function(r){

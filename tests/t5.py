@@ -38,9 +38,9 @@ async def main():
         pg = await page(c1)
         await pg.goto(url); await pg.evaluate("""localStorage.setItem('orbista.profile',JSON.stringify({topic:'flag',xp:120}));
           localStorage.setItem('orbista.mastery',JSON.stringify({DE:{r:1,w:0,s:1}}))""")
-        await pg.goto(url); await pg.wait_for_selector('#f:not([hidden])')
-        assert await pg.is_visible('#d')  # Demo-Link für Neue
-        await pg.fill('#c', 'falsch-9'); await pg.click('#b')
+        await pg.goto(url); await pg.wait_for_selector('#bar:not([hidden])')
+        assert await pg.is_visible('#bar a[href="?demo"]') and await pg.is_hidden('#sh')  # Übersicht mit Demo für Neue, Code-Blatt zu
+        await pg.click('#oc'); await pg.fill('#c', 'falsch-9'); await pg.click('#b')
         await pg.wait_for_function("document.getElementById('e').textContent.length>0")
         assert 'gibt es nicht' in await pg.inner_text('#e')
 
@@ -74,10 +74,10 @@ async def main():
         assert P2['xp'] == xp and await pg2.is_hidden('#welcome'), P2
 
         # Wechseln: zweiter Code auf Gerät 1 startet neu (Erststart), danach Auswahl aus beiden Codes
-        await pg.goto(url + '?wechseln'); await pg.wait_for_selector('#f:not([hidden])')
-        assert await pg.locator('#k button').count() == 1 and await pg.is_hidden('#d')
+        await pg.goto(url + '?wechseln'); await pg.wait_for_selector('#sh:not([hidden])')  # bekannte Codes: Blatt „Wer reist?“ ist gleich offen
+        assert await pg.locator('#k button').count() == 1 and await pg.inner_text('#oc') == 'Weiterreisen'
         await pg.fill('#c', 'ANDEN-2'); await pg.click('#b'); await pg.wait_for_selector('#welcome:not([hidden])')
-        await pg.goto(url); await pg.wait_for_selector('#f:not([hidden])')
+        await pg.goto(url); await pg.wait_for_selector('#sh:not([hidden])')
         assert await pg.locator('#k button').count() == 2
         await pg.click('#k button:text("KOMPASS-1")'); await pg.wait_for_selector('#go')
 
